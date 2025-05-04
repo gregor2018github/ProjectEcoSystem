@@ -1,7 +1,7 @@
 # IMPORTS
 import random
 import pygame
-from config import *                 # CONSTANTS
+import config                        # CONSTANTS
 from animals import Predator, Prey   # Animal classes
 from grass import Grass              # Grass class
 from simulation import setup_simulation, update_simulation              # Simulation functions
@@ -32,12 +32,12 @@ def main():
             # Handle click on Stop button
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
-                button_x = XLIM - BUTTON_X_OFFSET
-                settings_button_rect = pygame.Rect(button_x, BUTTON_Y_START, BUTTON_WIDTH, BUTTON_HEIGHT)
-                stop_button_rect = pygame.Rect(button_x, BUTTON_Y_START + BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
-                add_pred_button_rect = pygame.Rect(button_x, BUTTON_Y_START + 2 * BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
-                add_prey_button_rect = pygame.Rect(button_x, BUTTON_Y_START + 3 * BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
-                stats_button_rect = pygame.Rect(button_x, BUTTON_Y_START + 4 * BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
+                button_x = XLIM - config.BUTTON_X_OFFSET
+                settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                stop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
                 if settings_button_rect.collidepoint(mouse_pos):
                     action, new_settings = settings_menu(screen)
                     # Save new settings to global simulation parameters
@@ -71,7 +71,7 @@ def main():
         update_simulation(predators, preys, grass)
         # Render simulation state only after update
         draw_simulation(screen, predators, preys, grass)
-        clock.tick(FPS)  # 30 FPS
+        clock.tick(config.FPS)  # 30 FPS
 
     pygame.quit()
 

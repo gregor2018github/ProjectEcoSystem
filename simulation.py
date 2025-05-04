@@ -1,23 +1,22 @@
 import random
-from config import *
+import config
 from animals import Predator, Prey
 from grass import Grass
 
 # Simulation setup: initialize grass grid
 def setup_simulation():
-    predators = [Predator(random.uniform(0, XLIM), random.uniform(0, YLIM)) for _ in range(NUM_PREDATORS)]
-    preys = [Prey(random.uniform(0, XLIM), random.uniform(0, YLIM)) for _ in range(NUM_PREYS)]
+    predators = [Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREDATORS)]
+    preys = [Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREYS)]
     # Initialize grass chunks
     grass = {}
-    cols = XLIM // CHUNKSIZE
-    rows = YLIM // CHUNKSIZE
+    cols = config.XLIM // config.CHUNKSIZE
+    rows = config.YLIM // config.CHUNKSIZE
     for i in range(cols):
         for j in range(rows):
             grass[(i, j)] = Grass()
     return predators, preys, grass
 
 def update_simulation(predators, preys, grass):
-    global prey_deceased, predator_deceased, prey_born, predator_born, rounds_passed
     # Update animals
     for p in predators:
         p.update(preys, grass)
@@ -32,14 +31,14 @@ def update_simulation(predators, preys, grass):
     # Remove dead animals
     predators[:] = [p for p in predators if p.alive]
     preys[:] = [p for p in preys if p.alive]
-    predator_deceased += (predators_before - len(predators))
-    prey_deceased += (preys_before - len(preys))
+    config.predator_deceased += (predators_before - len(predators))
+    config.prey_deceased += (preys_before - len(preys))
     # Reproduction: Preys still reproduce randomly
     new_preys = []
     for p in preys:
-        if random.random() < PREY_REPRODUCTION_RATE:
+        if random.random() < config.PREY_REPRODUCTION_RATE:
             new_preys.append(Prey(p.x, p.y))
-            prey_born += 1
+            config.prey_born += 1
     preys.extend(new_preys)
     # Reproduction: Predators now reproduce only if they killed a prey
     new_predators = []
@@ -48,20 +47,20 @@ def update_simulation(predators, preys, grass):
             rand_x_dist = random.uniform(10, 15)*random.choice([-1, 1])
             rand_y_dist = random.uniform(10, 15)*random.choice([-1, 1])
             new_predators.append(Predator(p.x + rand_x_dist, p.y + rand_y_dist))
-            predator_born += 1
+            config.predator_born += 1
             p.killed = False  # Reset flag after reproduction
     predators.extend(new_predators)
     # Increment simulation round
-    rounds_passed += 1
+    config.rounds_passed += 1
 
-    # NEW: Compute total grass and append historic value
+    # Compute total grass and append historic value
     total_grass = sum(g.amount for g in grass.values())
 
-    stats_history["Prey Count"].append(len(preys))
-    stats_history["Predator Count"].append(len(predators))
-    stats_history["Grass Total"].append(total_grass)
-    stats_history["Prey deceased"].append(prey_deceased)
-    stats_history["Predator deceased"].append(predator_deceased)
-    stats_history["Prey born"].append(prey_born)
-    stats_history["Predator born"].append(predator_born)
-    stats_history["Rounds passed"].append(rounds_passed)
+    config.stats_history["Prey Count"].append(len(preys))
+    config.stats_history["Predator Count"].append(len(predators))
+    config.stats_history["Grass Total"].append(total_grass)
+    config.stats_history["Prey deceased"].append(config.prey_deceased)
+    config.stats_history["Predator deceased"].append(config.predator_deceased)
+    config.stats_history["Prey born"].append(config.prey_born)
+    config.stats_history["Predator born"].append(config.predator_born)
+    config.stats_history["Rounds passed"].append(config.rounds_passed)

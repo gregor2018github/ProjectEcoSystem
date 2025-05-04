@@ -1,11 +1,11 @@
 import pygame
-from config import *
+import config
 
 class Grass:
-    def __init__(self, amount=DEFAULT_GRASS_AMOUNT):
+    def __init__(self, amount=config.DEFAULT_GRASS_AMOUNT):
         self.amount = amount
-        self.max_amount = GRASS_MAX_AMOUNT
-        self.growth_rate = GRASS_GROWTH_RATE
+        self.max_amount = config.GRASS_MAX_AMOUNT
+        self.growth_rate = config.GRASS_GROWTH_RATE
 
     def update(self):
         # Regenerate grass up to maximum amount
@@ -13,6 +13,6 @@ class Grass:
 
     def draw(self, screen, pos, size):
         # Draw a green rectangle with transparency based on grass amount
-        intensity = int(GRASS_COLOR_MAX * (self.amount / self.max_amount))
+        intensity = int(config.GRASS_COLOR_MAX * (self.amount / self.max_amount))
         color = (0, intensity, 0)
         pygame.draw.rect(screen, color, (pos[0], pos[1], size, size))

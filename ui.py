@@ -1,5 +1,5 @@
 import pygame
-from config import *
+import config
 
 def draw_line_chart(surface, rect, series, color):
     if len(series) < 2:
@@ -21,17 +21,17 @@ def draw_line_chart(surface, rect, series, color):
 
 # Modified statistics window to be fullscreen with updated headers and without axis descriptions
 def show_statistics_window(predators, preys, grass):
-    stat_screen = pygame.display.set_mode((XLIM, YLIM))
+    stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     pygame.display.set_caption("Statistics")
     font = pygame.font.Font(None, 20)
     running_stats = True
 
     margin = 40
-    chart_width = XLIM - 2 * margin
-    chart_height = int((YLIM - 3 * margin - BUTTON_HEIGHT) / 2)
+    chart_width = config.XLIM - 2 * margin
+    chart_height = int((config.YLIM - 3 * margin - config.BUTTON_HEIGHT) / 2)
     pop_chart_rect = pygame.Rect(margin, margin, chart_width, chart_height)
     event_chart_rect = pygame.Rect(margin, margin + chart_height + margin, chart_width, chart_height)
-    close_rect = pygame.Rect((XLIM - BUTTON_WIDTH) // 2, YLIM - margin - BUTTON_HEIGHT + 10, BUTTON_WIDTH, BUTTON_HEIGHT)
+    close_rect = pygame.Rect((config.XLIM - config.BUTTON_WIDTH) // 2, config.YLIM - margin - config.BUTTON_HEIGHT + 10, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     
     while running_stats:
         for event in pygame.event.get():
@@ -88,22 +88,22 @@ def show_statistics_window(predators, preys, grass):
             x_offset += part.get_width()
         
         # --- Draw line charts in top graph, including Grass Total ---
-        draw_line_chart(stat_screen, pop_chart_rect, stats_history["Prey Count"], (255,255,255))
-        draw_line_chart(stat_screen, pop_chart_rect, stats_history["Predator Count"], (255,0,0))
-        draw_line_chart(stat_screen, pop_chart_rect, stats_history["Grass Total"], (0,255,0))
+        draw_line_chart(stat_screen, pop_chart_rect, config.stats_history["Prey Count"], (255,255,255))
+        draw_line_chart(stat_screen, pop_chart_rect, config.stats_history["Predator Count"], (255,0,0))
+        draw_line_chart(stat_screen, pop_chart_rect, config.stats_history["Grass Total"], (0,255,0))
         
         # --- Draw line charts for events graph (unchanged drawing order) ---
-        draw_line_chart(stat_screen, event_chart_rect, stats_history["Prey deceased"], (150,150,150))
-        draw_line_chart(stat_screen, event_chart_rect, stats_history["Predator deceased"], (255,165,0))
-        draw_line_chart(stat_screen, event_chart_rect, stats_history["Prey born"], (0,255,0))
-        draw_line_chart(stat_screen, event_chart_rect, stats_history["Predator born"], (0,0,255))
+        draw_line_chart(stat_screen, event_chart_rect, config.stats_history["Prey deceased"], (150,150,150))
+        draw_line_chart(stat_screen, event_chart_rect, config.stats_history["Predator deceased"], (255,165,0))
+        draw_line_chart(stat_screen, event_chart_rect, config.stats_history["Prey born"], (0,255,0))
+        draw_line_chart(stat_screen, event_chart_rect, config.stats_history["Predator born"], (0,0,255))
         
-        rounds_label = font.render(f"Rounds: {rounds_passed}", True, (255,255,0))
-        stat_screen.blit(rounds_label, (margin, YLIM - margin - BUTTON_HEIGHT - 25))
+        rounds_label = font.render(f"Rounds: {config.rounds_passed}", True, (255,255,0))
+        stat_screen.blit(rounds_label, (margin, config.YLIM - margin - config.BUTTON_HEIGHT - 25))
         draw_button(stat_screen, close_rect, "Close", font)
         pygame.display.flip()
         
-    stat_screen = pygame.display.set_mode((XLIM, YLIM))
+    stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     pygame.display.set_caption("Simulation")
 
 # Helper function to draw nicer buttons
@@ -125,15 +125,15 @@ def settings_menu(screen):
     
     # Initialize settings and error tracking
     settings = {
-        "Prey Health": PREY_MAX_FOOD,
-        "Predator Health": PREDATOR_MAX_FOOD,
-        "Prey Reproduction Rate": PREY_REPRODUCTION_RATE,
-        "Predator Reproduction Rate": PREDATOR_REPRODUCTION_RATE,
-        "Grass Growth Rate": GRASS_GROWTH_RATE,
-        "Max Grass per Field": GRASS_MAX_AMOUNT,
-        "Prey Fear Distance": PREY_FEAR_DISTANCE,
-        "Prey Speed": PREY_SPEED,
-        "Predator Speed": PREDATOR_SPEED
+        "Prey Health": config.PREY_MAX_FOOD,
+        "Predator Health": config.PREDATOR_MAX_FOOD,
+        "Prey Reproduction Rate": config.PREY_REPRODUCTION_RATE,
+        "Predator Reproduction Rate": config.PREDATOR_REPRODUCTION_RATE,
+        "Grass Growth Rate": config.GRASS_GROWTH_RATE,
+        "Max Grass per Field": config.GRASS_MAX_AMOUNT,
+        "Prey Fear Distance": config.PREY_FEAR_DISTANCE,
+        "Prey Speed": config.PREY_SPEED,
+        "Predator Speed": config.PREDATOR_SPEED
     }
     error_fields = {}  # keys with conversion errors
     scroll_offset = 0
@@ -178,7 +178,7 @@ def settings_menu(screen):
                     action = "cancel"
                     running_settings = False
                 elif btn_rect_reset.collidepoint(event.pos):
-                    for key, value in default_settings.items():
+                    for key, value in config.default_settings.items():
                         settings[key] = value
                         error_fields.pop(key, None)
                 else:
@@ -237,7 +237,7 @@ def settings_menu(screen):
                         pygame.draw.rect(screen, (255, 0, 0), rect)
                     else:
                         pygame.draw.rect(screen, (180, 180, 250), rect)
-                label = f"{key} (std: {default_settings[key]}): {text_val}"
+                label = f"{key} (std: {config.default_settings[key]}): {text_val}"
                 text_surface = param_font.render(label, True, (0,0,0))
                 screen.blit(text_surface, (rect.left + 10, rect.top + 5))
                 if key == active_key:
@@ -261,46 +261,45 @@ def settings_menu(screen):
                 else:
                     settings[key] = num_val
             except ValueError:
-                settings[key] = default_settings[key]
+                settings[key] = config.default_settings[key]
     return action, settings
 
 # Updated draw_simulation(): use draw_button for all buttons
 def draw_simulation(screen, predators, preys, grass):
     screen.fill((0, 0, 0))
-    # Draw the grass grid
-    for (i, j), g in grass.items():
-        pos = (i * CHUNKSIZE, j * CHUNKSIZE)
-        g.draw(screen, pos, CHUNKSIZE)
-    for p in preys:
+    for (i, j), g in grass.items(): # Draw the grass grid
+        pos = (i * config.CHUNKSIZE, j * config.CHUNKSIZE)
+        g.draw(screen, pos, config.CHUNKSIZE)
+    for p in preys: # Draw the prey
         p.draw(screen)
-    for p in predators:
+    for p in predators: # Draw the predators
         p.draw(screen)
     # Render statistics text in the top-left corner
-    font = pygame.font.Font(None, STATS_FONT_SIZE)
+    font = pygame.font.Font(None, config.STATS_FONT_SIZE)
     # Format rounds in thousands (K)
-    rounds_display = f"{rounds_passed//1000}K" if rounds_passed >= 1000 else str(rounds_passed)
+    rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
     stats = [
         f"Prey Count: {len(preys)}",
         f"Predator Count: {len(predators)}",
-        f"Prey deceased: {prey_deceased}",
-        f"Predator deceased: {predator_deceased}",
-        f"Prey born: {prey_born}",
-        f"Predator born: {predator_born}",
+        f"Prey deceased: {config.prey_deceased}",
+        f"Predator deceased: {config.predator_deceased}",
+        f"Prey born: {config.prey_born}",
+        f"Predator born: {config.predator_born}",
         f"Rounds passed: {rounds_display}"
     ]
-    y_offset = STATS_Y_OFFSET
+    y_offset = config.STATS_Y_OFFSET
     for line in stats:
-        text_surface = font.render(line, True, FONT_COLORS)
-        screen.blit(text_surface, (STATS_X_OFFSET, y_offset))
-        y_offset += STATS_LINE_HEIGHT
+        text_surface = font.render(line, True, config.FONT_COLORS)
+        screen.blit(text_surface, (config.STATS_X_OFFSET, y_offset))
+        y_offset += config.STATS_LINE_HEIGHT
     # Draw Stop button at top right
-    button_x = XLIM - BUTTON_X_OFFSET
-    settings_button_rect = pygame.Rect(button_x, BUTTON_Y_START, BUTTON_WIDTH, BUTTON_HEIGHT)
-    stop_button_rect = pygame.Rect(button_x, BUTTON_Y_START + BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
-    add_pred_button_rect = pygame.Rect(button_x, BUTTON_Y_START + 2 * BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
-    add_prey_button_rect = pygame.Rect(button_x, BUTTON_Y_START + 3 * BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
+    button_x = config.XLIM - config.BUTTON_X_OFFSET
+    settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    stop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     # NEW: Statistics button below the other buttons
-    stats_button_rect = pygame.Rect(button_x, BUTTON_Y_START + 4 * BUTTON_Y_GAP, BUTTON_WIDTH, BUTTON_HEIGHT)
+    stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     font_button = pygame.font.Font(None, 24)
     draw_button(screen, settings_button_rect, "Settings", font_button)
     draw_button(screen, stop_button_rect, "Exit", font_button)
