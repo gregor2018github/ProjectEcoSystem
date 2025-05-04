@@ -17,22 +17,30 @@ def setup_simulation():
     return predators, preys, grass
 
 def update_simulation(predators, preys, grass):
-    # Update animals
+    # Combine predators and preys into a single list for interaction checks
+    all_animals = predators + preys 
+
+    # Update animals - pass the combined list to each animal's update method
     for p in predators:
-        p.update(preys, grass)
+        p.update(all_animals, grass) # Pass the full list
     for p in preys:
-        p.update(predators, grass)
+        p.update(all_animals, grass) # Pass the full list
+
     # Update grass chunks
     for g in grass.values():
         g.update()
+        
     # Count deaths before removal
     preys_before = len(preys)
     predators_before = len(predators)
-    # Remove dead animals
+    
+    # Remove dead animals (using the original separate lists)
     predators[:] = [p for p in predators if p.alive]
     preys[:] = [p for p in preys if p.alive]
+    
     config.predator_deceased += (predators_before - len(predators))
     config.prey_deceased += (preys_before - len(preys))
+    
     # Reproduction: Preys still reproduce randomly
     new_preys = []
     for p in preys:
@@ -40,6 +48,7 @@ def update_simulation(predators, preys, grass):
             new_preys.append(Prey(p.x, p.y))
             config.prey_born += 1
     preys.extend(new_preys)
+    
     # Reproduction: Predators now reproduce only if they killed a prey
     new_predators = []
     for p in predators:
@@ -50,12 +59,14 @@ def update_simulation(predators, preys, grass):
             config.predator_born += 1
             p.killed = False  # Reset flag after reproduction
     predators.extend(new_predators)
+    
     # Increment simulation round
     config.rounds_passed += 1
 
     # Compute total grass and append historic value
     total_grass = sum(g.amount for g in grass.values())
 
+    # Update stats history (using the updated separate lists)
     config.stats_history["Prey Count"].append(len(preys))
     config.stats_history["Predator Count"].append(len(predators))
     config.stats_history["Grass Total"].append(total_grass)
