@@ -11,16 +11,17 @@ from ui import draw_simulation, settings_menu, show_statistics_window   # UI fun
 
 def main():
     pygame.init()
-    # Get user's display info and compute window dimensions
-    info = pygame.display.Info()
-    screen_width = min(2500, info.current_w)
-    screen_height = min(1300, info.current_h)
-    # Update globals so rest of simulation uses these dimensions
-    global XLIM, YLIM
-    XLIM = screen_width
-    YLIM = screen_height
 
-    screen = pygame.display.set_mode((XLIM, YLIM))
+    # set the size of the game field, either by locked values or by display size
+    if not config.LOCKED_SCREEN_SIZE:
+        # Get user's display info and compute window dimensions
+        info = pygame.display.Info()
+        screen_width = info.current_w
+        screen_height = info.current_h
+        config.XLIM = screen_width
+        config.YLIM = screen_height
+
+    screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     clock = pygame.time.Clock()
     predators, preys, grass = setup_simulation()
 
@@ -32,7 +33,7 @@ def main():
             # Handle click on Stop button
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
-                button_x = XLIM - config.BUTTON_X_OFFSET
+                button_x = config.XLIM - config.BUTTON_X_OFFSET
                 settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
                 stop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
                 add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
@@ -60,9 +61,9 @@ def main():
                 elif stop_button_rect.collidepoint(mouse_pos):
                     running = False
                 elif add_pred_button_rect.collidepoint(mouse_pos):
-                    predators.append(Predator(random.uniform(0, XLIM), random.uniform(0, YLIM)))
+                    predators.append(Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)))
                 elif add_prey_button_rect.collidepoint(mouse_pos):
-                    preys.append(Prey(random.uniform(0, XLIM), random.uniform(0, YLIM)))
+                    preys.append(Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)))
                 # NEW: Handle click on Statistics button
                 elif stats_button_rect.collidepoint(mouse_pos):
                     show_statistics_window(predators, preys, grass)

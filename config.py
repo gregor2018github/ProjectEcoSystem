@@ -1,4 +1,5 @@
 # CONSTANTS
+LOCKED_SCREEN_SIZE = False  # If True, screen size is fixed to default values. If False, screen size is set to user's display size.
 XLIM = 1540
 YLIM = 850
 NUM_PREDATORS = 5
