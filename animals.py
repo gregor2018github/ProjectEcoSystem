@@ -9,10 +9,20 @@ class Animal(ABC):
         self.x = x
         self.y = y
         self.alive = True
+        self.starving = False  # attribute to track starvation
+        self.killed = False  # attribute to track kill events
         # Food to be initialized by child classes
 
-    def consume_energy(self):
-        self.food -= 1
+    def consume_energy(self, hunting=False):
+        if isinstance(self, Predator):
+            # Predator energy consumption logic
+            if hunting:
+                self.food -= config.PREDATOR_HUNTING_ENERGY_COST
+            else:
+                self.food -= config.PREDATOR_REGULAR_ENERGY_COST
+        else:
+            # Prey energy consumption logic
+            self.food -= 1
         if self.food <= 0:
             self.alive = False
 
@@ -31,8 +41,7 @@ class Predator(Animal):
     def __init__(self, x, y):
         super().__init__(x, y)
         self.food = config.PREDATOR_MAX_FOOD  # Initialize predator food
-        self.starving = False  # attribute to track starvation
-        self.killed = False  # attribute to track kill events
+        self.hunting = False  # attribute to track hunting state
     
     def draw(self, screen):
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
@@ -45,7 +54,7 @@ class Predator(Animal):
         avoid_dy = 0
         predator_too_close = False
 
-        # Separate loops for finding prey and checking for nearby predators
+        # Separate loops for evading predators, hunting prey, and moving randomly
         
         # Check for nearby predators and calculate avoidance vector
         if config.PRED_AVOID_PRED:
@@ -63,24 +72,27 @@ class Predator(Animal):
         
         # If avoiding predators, move away and skip hunting, but only if not starving
         if config.PRED_AVOID_PRED and predator_too_close and not self.starving:
+            self.hunting = False
             norm = (avoid_dx**2 + avoid_dy**2)**0.5 or 1 # Normalize the total avoidance vector
             self.x += (avoid_dx / norm) * config.PREDATOR_SPEED 
             self.y += (avoid_dy / norm) * config.PREDATOR_SPEED
-            # print("Predator avoiding another predator") # Optional: keep for debugging
         else:
             # Find the closest prey only if not avoiding other predators
             for prey in animals:
                 # Ensure we are only targeting Prey
-                if isinstance(prey, Prey) and prey.alive: 
+                if isinstance(prey, Prey): 
                     dx = prey.x - self.x
                     dy = prey.y - self.y
                     dist = (dx**2 + dy**2)**0.5
-                    if dist < min_dist_prey:
-                        min_dist_prey = dist
-                        target = prey
-
+                    # check if prey is in smell distance
+                    if dist < config.PREDATOR_SMELL_DISTANCE:
+                        # Check if prey is closer than the current target
+                        if dist < min_dist_prey:
+                            min_dist_prey = dist
+                            target = prey
             # If a target is found, move towards it
             if target:
+                self.hunting = True
                 dx = target.x - self.x
                 dy = target.y - self.y
                 # dist is already calculated as min_dist_prey
@@ -94,6 +106,11 @@ class Predator(Animal):
                     self.killed = True  # Mark kill for reproduction
                     # Add food gain on kill; cap to max
                     self.food = min(config.PREDATOR_MAX_FOOD, self.food + config.PREDATOR_FOOD_GAIN_PER_KILL)
+            # if not hunting, move randomly
+            else:
+                self.hunting = False
+                self.x += random.uniform(-1, 1)
+                self.y += random.uniform(-1, 1)
 
         # Boundary checks and energy consumption
         self.x = max(0, min(config.XLIM, self.x))
@@ -111,7 +128,6 @@ class Prey(Animal):
     def __init__(self, x, y):
         super().__init__(x, y)
         self.food = config.PREY_MAX_FOOD  # Initialize prey food
-        self.starving = False  # attribute to track starvation
     
     def draw(self, screen):
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)

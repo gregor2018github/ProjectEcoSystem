@@ -42,16 +42,15 @@ def main():
                 if settings_button_rect.collidepoint(mouse_pos):
                     action, new_settings = settings_menu(screen)
                     # Save new settings to global simulation parameters
-                    global PREY_MAX_FOOD, PREDATOR_MAX_FOOD, PREY_REPRODUCTION_RATE, PREDATOR_REPRODUCTION_RATE, GRASS_GROWTH_RATE, GRASS_MAX_AMOUNT, PREY_FEAR_DISTANCE, PREY_SPEED, PREDATOR_SPEED
-                    PREY_MAX_FOOD = new_settings["Prey Health"]
-                    PREDATOR_MAX_FOOD = new_settings["Predator Health"]
-                    PREY_REPRODUCTION_RATE = new_settings["Prey Reproduction Rate"]
-                    PREDATOR_REPRODUCTION_RATE = new_settings["Predator Reproduction Rate"]
-                    GRASS_GROWTH_RATE = new_settings["Grass Growth Rate"]
-                    GRASS_MAX_AMOUNT = new_settings["Max Grass per Field"]
-                    PREY_FEAR_DISTANCE = new_settings["Prey Fear Distance"]
-                    PREY_SPEED = new_settings["Prey Speed"]
-                    PREDATOR_SPEED = new_settings["Predator Speed"]
+                    config.PREY_MAX_FOOD = new_settings["Prey Health"]
+                    config.PREDATOR_MAX_FOOD = new_settings["Predator Health"]
+                    config.PREY_REPRODUCTION_RATE = new_settings["Prey Reproduction Rate"]
+                    config.PREDATOR_REPRODUCTION_RATE = new_settings["Predator Reproduction Rate"]
+                    config.GRASS_GROWTH_RATE = new_settings["Grass Growth Rate"]
+                    config.GRASS_MAX_AMOUNT = new_settings["Max Grass per Field"]
+                    config.PREY_FEAR_DISTANCE = new_settings["Prey Fear Distance"]
+                    config.PREY_SPEED = new_settings["Prey Speed"]
+                    config.PREDATOR_SPEED = new_settings["Predator Speed"]
                     
                     if action == "restart":
                         predators, preys, grass = setup_simulation()
