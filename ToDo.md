@@ -1,11 +1,9 @@
 ### Todo
 
-- [ ] Add click effects for buttons
-- [ ] Add hover effects for buttons
-- [ ] Add age system
-  - [ ] Count and store age per animal instance
-  - [ ] Animals can die of old age
-  - [ ] Keep track of detailed death stats (hunger, age, hunted down)
+- [x] Add age system
+  - [x] Count and store age per animal instance
+  - [x] Animals can die of old age
+  - [x] Keep track of detailed death stats (hunger, age, hunted down)
 - [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [ ] Animals need new mating state
   - [ ] Keep track of generational statistics
@@ -17,6 +15,8 @@
  
 ### Done ✓
 
+- [x] Add click effects for buttons
+- [x] Add hover effects for buttons 
 - [x] Add event_handler.py and refactor existing code accordingly
 - [x] Add pause button
 - [x] Refactor into several scripts for readability

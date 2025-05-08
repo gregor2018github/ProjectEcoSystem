@@ -18,6 +18,7 @@ PREDATOR_FOOD_GAIN_PER_KILL = 350
 PREDATOR_REGULAR_ENERGY_COST = 0.8
 PREDATOR_HUNTING_ENERGY_COST = 1 
 PREDATOR_STARV_BORDER = 0.2   # x% of max food
+PREDATOR_MAX_AGE = 1200 # max age in rounds
 
 # PREY behavior
 PREY_SPEED = 3
@@ -26,6 +27,7 @@ PREY_REPRODUCTION_RATE = 0.002 # conditionless reproduction rate
 PREY_MAX_FOOD = 200
 PREY_FOOD_GAIN_PER_GRASS = 0.15 # x% of grass amount of the chunk the prey is in
 PREY_STARV_BORDER = 0.2  # x% of max food
+PREY_MAX_AGE = 900 # max age in rounds
 
 # Grass
 DEFAULT_GRASS_AMOUNT = 6
@@ -47,6 +49,11 @@ prey_deceased = 0
 predator_deceased = 0
 prey_born = 0
 predator_born = 0
+prey_dead_by_starvation = 0
+predator_dead_by_starvation = 0
+prey_dead_by_age = 0
+predator_dead_by_age = 0
+prey_dead_by_hunting = 0
 rounds_passed = 0
 
 # Button layout constants for the right side of the screen

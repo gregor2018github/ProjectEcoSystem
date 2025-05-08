@@ -25,7 +25,8 @@ def draw_line_chart(surface, rect, series, color):
     pygame.draw.lines(surface, color, False, points, 2)
 
 # Helper function to draw nicer buttons
-def draw_button(surface, rect, text, font):
+def draw_button(surface, rect, text, font, mouse_pos):
+    hover = rect.collidepoint(mouse_pos)
     # Check if this button is currently being clicked to apply visual effect
     button_effect = False
     current_time = pygame.time.get_ticks()
@@ -39,10 +40,16 @@ def draw_button(surface, rect, text, font):
         button_effect = True
     else:
         # Normal button appearance
-        pygame.draw.rect(surface, (60, 100, 80), rect, border_radius=8)
+        if hover:
+            pygame.draw.rect(surface, (80, 120, 100), rect, border_radius=8) # Lighter green for hover
+        else:
+            pygame.draw.rect(surface, (60, 100, 80), rect, border_radius=8)
     
     # Always draw the border
-    pygame.draw.rect(surface, (255, 255, 255), rect, 2, border_radius=8)
+    if hover or button_effect:
+        pygame.draw.rect(surface, (255, 255, 255), rect, 3, border_radius=8) # Thicker border on hover/click
+    else:
+        pygame.draw.rect(surface, (255, 255, 255), rect, 2, border_radius=8)
     
     # Adjust text position slightly when button is pressed
     text_surface = font.render(text, True, (255, 255, 255))
@@ -80,7 +87,9 @@ def show_statistics_window(predators, preys, grass):
                 if close_rect.collidepoint(event.pos):
                     register_button_click(close_rect)
                     running_stats = False
-                    
+        
+        mouse_pos = pygame.mouse.get_pos() # Get mouse position for hover effect
+        
         stat_screen.fill((30, 30, 30))
         
         pygame.draw.rect(stat_screen, (200,200,200), pop_chart_rect, 1)
@@ -137,7 +146,7 @@ def show_statistics_window(predators, preys, grass):
         
         rounds_label = font.render(f"Rounds: {config.rounds_passed}", True, (255,255,0))
         stat_screen.blit(rounds_label, (margin, config.YLIM - margin - config.BUTTON_HEIGHT - 25))
-        draw_button(stat_screen, close_rect, "Close", font)
+        draw_button(stat_screen, close_rect, "Close", font, mouse_pos)
         pygame.display.flip()
         
     stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
@@ -171,6 +180,7 @@ def settings_menu(screen):
     running_settings = True
     action = None
     while running_settings:
+        mouse_pos_settings = pygame.mouse.get_pos() # Get mouse position for hover effect in settings
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running_settings = False
@@ -279,10 +289,10 @@ def settings_menu(screen):
                     caret_height = param_font.get_height()
                     pygame.draw.line(screen, (0,0,0), (caret_x, caret_y), (caret_x, caret_y + caret_height), 2)
         btn_font = pygame.font.Font(None, 24)
-        draw_button(screen, btn_rect_standard, "Restart", btn_font)
-        draw_button(screen, btn_rect_resume, "Resume", btn_font)
-        draw_button(screen, btn_rect_cancel, "Cancel", btn_font)
-        draw_button(screen, btn_rect_reset, "Reset to std", btn_font)
+        draw_button(screen, btn_rect_standard, "Restart", btn_font, mouse_pos_settings)
+        draw_button(screen, btn_rect_resume, "Resume", btn_font, mouse_pos_settings)
+        draw_button(screen, btn_rect_cancel, "Cancel", btn_font, mouse_pos_settings)
+        draw_button(screen, btn_rect_reset, "Reset to std", btn_font, mouse_pos_settings)
         pygame.display.flip()
     # Before returning, ensure all settings values are numeric.
     for key in settings:
@@ -311,14 +321,36 @@ def draw_simulation(screen, predators, preys, grass):
     font = pygame.font.Font(None, config.STATS_FONT_SIZE)
     # Format rounds in thousands (K)
     rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
+    # stats = [
+    #     f"Prey Count: {len(preys)}",
+    #     f"Predator Count: {len(predators)}",
+    #     f"Prey deceased: {config.prey_deceased}",
+    #     f"Predator deceased: {config.predator_deceased}",
+    #     f"Prey dead by starvation: {config.prey_dead_by_starvation}",
+    #     f"Predator dead by starvation: {config.predator_dead_by_starvation}",
+    #     f"Prey dead by age: {config.prey_dead_by_age}",
+    #     f"Predator dead by age: {config.predator_dead_by_age}",
+    #     f"Prey dead by hunting: {config.prey_dead_by_hunting}",
+    #     f"Prey born: {config.prey_born}",
+    #     f"Predator born: {config.predator_born}",
+    #     f"Rounds passed: {rounds_display}"
+    # ]
     stats = [
-        f"Prey Count: {len(preys)}",
-        f"Predator Count: {len(predators)}",
-        f"Prey deceased: {config.prey_deceased}",
-        f"Predator deceased: {config.predator_deceased}",
-        f"Prey born: {config.prey_born}",
-        f"Predator born: {config.predator_born}",
-        f"Rounds passed: {rounds_display}"
+        f"Rounds: {rounds_display}",
+        "",  # Blank line for separation
+        f"Prey: {len(preys)} (Born: {config.prey_born})",
+        f"Predators: {len(predators)} (Born: {config.predator_born})",
+        "",  # Blank line
+        "Prey Deaths:",
+        f"  Total: {config.prey_deceased}",
+        f"    Starvation: {config.prey_dead_by_starvation}",
+        f"    Age: {config.prey_dead_by_age}",
+        f"    Hunted: {config.prey_dead_by_hunting}",
+        "",  # Blank line
+        "Predator Deaths:",
+        f"  Total: {config.predator_deceased}",
+        f"    Starvation: {config.predator_dead_by_starvation}",
+        f"    Age: {config.predator_dead_by_age}",
     ]
     y_offset = config.STATS_Y_OFFSET
     for line in stats:
@@ -328,6 +360,7 @@ def draw_simulation(screen, predators, preys, grass):
 
     # Buttons on the right side of the screen
     button_x = config.XLIM - config.BUTTON_X_OFFSET
+    mouse_pos = pygame.mouse.get_pos() # Get mouse position for hover effect
 
     exit_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     pause_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
@@ -337,11 +370,11 @@ def draw_simulation(screen, predators, preys, grass):
     stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     font_button = pygame.font.Font(None, 24)
 
-    draw_button(screen, exit_button_rect, "Exit", font_button)
-    draw_button(screen, pause_button_rect, "Stop/Play", font_button)
-    draw_button(screen, settings_button_rect, "Settings", font_button)
-    draw_button(screen, add_pred_button_rect, "Add Pred", font_button)
-    draw_button(screen, add_prey_button_rect, "Add Prey", font_button)
-    draw_button(screen, stats_button_rect, "Statistics", font_button)
+    draw_button(screen, exit_button_rect, "Exit", font_button, mouse_pos)
+    draw_button(screen, pause_button_rect, "Stop/Play", font_button, mouse_pos)
+    draw_button(screen, settings_button_rect, "Settings", font_button, mouse_pos)
+    draw_button(screen, add_pred_button_rect, "Add Pred", font_button, mouse_pos)
+    draw_button(screen, add_prey_button_rect, "Add Prey", font_button, mouse_pos)
+    draw_button(screen, stats_button_rect, "Statistics", font_button, mouse_pos)
     
     pygame.display.flip()

@@ -11,12 +11,17 @@ class Animal(ABC):
         self.alive = True
         self.starving = False  # attribute to track starvation
         self.killed = False  # attribute to track kill events
-        # Food to be initialized by child classes
+        self.age = 0  
 
-    def consume_energy(self, hunting=False):
+    def consumed_all_energy(self):
+        """
+        Check if the animal has consumed all its energy, returns true in case.
+        If the animal is not dead, check if it is starving. 
+        Consider the animal type (Predator or Prey) and its state (hunting or not). 
+        """
         if isinstance(self, Predator):
             # Predator energy consumption logic
-            if hunting:
+            if self.hunting:
                 self.food -= config.PREDATOR_HUNTING_ENERGY_COST
             else:
                 self.food -= config.PREDATOR_REGULAR_ENERGY_COST
@@ -24,7 +29,21 @@ class Animal(ABC):
             # Prey energy consumption logic
             self.food -= 1
         if self.food <= 0:
-            self.alive = False
+            return True  # Mark as dead if food is depleted
+        else: # else check if the animal is starving
+            if isinstance(self, Predator):
+                # Predator starvation check
+                if self.food < config.PREDATOR_STARV_BORDER * config.PREDATOR_MAX_FOOD:
+                    self.starving = True
+                else:
+                    self.starving = False
+            else:
+                # Prey starvation check
+                if self.food < config.PREY_STARV_BORDER * config.PREY_MAX_FOOD:
+                    self.starving = True
+                else:
+                    self.starving = False
+        return False  # Mark as alive if food is not depleted
 
     @abstractmethod
     def update(self, animals, grass):
@@ -47,14 +66,26 @@ class Predator(Animal):
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
     
     def update(self, animals, grass):
-        self.killed = False
+        self.killed = False # means it killed something this round
         target = None
         min_dist_prey = float('inf')
         avoid_dx = 0
         avoid_dy = 0
         predator_too_close = False
 
-        # Separate loops for evading predators, hunting prey, and moving randomly
+        # check for death by age
+        self.age += 1
+        if self.age > config.PREDATOR_MAX_AGE:
+            self.alive = False
+            config.predator_dead_by_age += 1
+            return
+        # check for death by starvation
+        if self.consumed_all_energy():  # Reduce food and possibly mark dead or starving
+            self.alive = False
+            config.predator_dead_by_starvation += 1
+            return
+
+        # Separate moving loops for evading predators, hunting prey, and moving randomly
         
         # Check for nearby predators and calculate avoidance vector
         if config.PRED_AVOID_PRED:
@@ -104,6 +135,7 @@ class Predator(Animal):
                 if min_dist_prey < self.SIZE + target.SIZE: # No need to check target.alive again, done in prey finding loop
                     target.alive = False
                     self.killed = True  # Mark kill for reproduction
+                    config.prey_dead_by_hunting += 1
                     # Add food gain on kill; cap to max
                     self.food = min(config.PREDATOR_MAX_FOOD, self.food + config.PREDATOR_FOOD_GAIN_PER_KILL)
             # if not hunting, move randomly
@@ -115,12 +147,7 @@ class Predator(Animal):
         # Boundary checks and energy consumption
         self.x = max(0, min(config.XLIM, self.x))
         self.y = max(0, min(config.YLIM, self.y))
-        self.consume_energy()  # Reduce food and possibly mark dead
-        if self.food < config.PREDATOR_STARV_BORDER * config.PREDATOR_MAX_FOOD:
-            self.starving = True
-        else:
-            self.starving = False
-
+        
 class Prey(Animal):
     COLOR = (255, 255, 255)  # Blue
     SIZE = 3
@@ -133,6 +160,18 @@ class Prey(Animal):
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
   
     def update(self, animals, grass):
+        # check for death by age
+        self.age += 1
+        if self.age > config.PREY_MAX_AGE:
+            self.alive = False
+            config.prey_dead_by_age += 1
+            return
+        # check for death by starvation
+        if self.consumed_all_energy():  # Reduce food and possibly mark dead or starving
+            self.alive = False
+            config.prey_dead_by_starvation += 1
+            return
+
         # Flee from predators
         flee_dx = 0
         flee_dy = 0
@@ -181,8 +220,4 @@ class Prey(Animal):
             gain = grass[chunk].amount * config.PREY_FOOD_GAIN_PER_GRASS
             self.food = min(config.PREY_MAX_FOOD, self.food + gain)
             grass[chunk].amount = max(0, grass[chunk].amount - 1)
-        self.consume_energy()  # Reduce food and possibly mark dead
-        if self.food < config.PREY_STARV_BORDER * config.PREY_MAX_FOOD:
-            self.starving = True
-        else:
-            self.starving = False
+
