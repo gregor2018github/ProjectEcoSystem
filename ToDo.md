@@ -14,6 +14,7 @@
 - [ ] Add heritage of traits from parents to children
   - [ ] give every induvidual unique properties instead of hardcoded values from settings
   - [ ] add mixing algorithm (distribution of finite amount of points between different traits)
+- [ ] Add hover statistics for animal instances
 - [ ] Improve performance by only considering other animals with low distances instead of every animal
  
 ### Done ✓

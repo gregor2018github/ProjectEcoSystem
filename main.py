@@ -26,6 +26,7 @@ def main():
     predators, preys, grass = setup_simulation()
 
     running = True
+    stopped = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -34,11 +35,12 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
                 button_x = config.XLIM - config.BUTTON_X_OFFSET
-                settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-                stop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-                add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-                add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-                stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                exit_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                pause_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+                stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
                 if settings_button_rect.collidepoint(mouse_pos):
                     action, new_settings = settings_menu(screen)
                     # Save new settings to global simulation parameters
@@ -57,20 +59,23 @@ def main():
                     elif action == "resume":
                         # Continue with updated settings
                         pass
-                elif stop_button_rect.collidepoint(mouse_pos):
+                elif exit_button_rect.collidepoint(mouse_pos):
                     running = False
+                elif pause_button_rect.collidepoint(mouse_pos):
+                    stopped = not stopped
                 elif add_pred_button_rect.collidepoint(mouse_pos):
                     predators.append(Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)))
                 elif add_prey_button_rect.collidepoint(mouse_pos):
                     preys.append(Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)))
-                # NEW: Handle click on Statistics button
                 elif stats_button_rect.collidepoint(mouse_pos):
                     show_statistics_window(predators, preys, grass)
 
         # Calculate simulation step
-        update_simulation(predators, preys, grass)
-        # Render simulation state only after update
-        draw_simulation(screen, predators, preys, grass)
+        if not stopped:
+            # Update simulation state
+            update_simulation(predators, preys, grass)
+            # Render simulation state only after update
+            draw_simulation(screen, predators, preys, grass)
         clock.tick(config.FPS)  # 30 FPS
 
     pygame.quit()

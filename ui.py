@@ -46,9 +46,6 @@ def show_statistics_window(predators, preys, grass):
         pygame.draw.rect(stat_screen, (200,200,200), pop_chart_rect, 1)
         pygame.draw.rect(stat_screen, (200,200,200), event_chart_rect, 1)
         
-        # NEW: Calculate total grass amount for header (grass total already updated in history)
-        total_grass = sum(g.amount for g in grass.values())
-        
         # --- Population header with colored labels for top graph ---
         # Order: Prey (white), Predator (red), Grass (green)
         header_parts = [
@@ -292,17 +289,21 @@ def draw_simulation(screen, predators, preys, grass):
         text_surface = font.render(line, True, config.FONT_COLORS)
         screen.blit(text_surface, (config.STATS_X_OFFSET, y_offset))
         y_offset += config.STATS_LINE_HEIGHT
-    # Draw Stop button at top right
+
+    # Buttons on the right side of the screen
     button_x = config.XLIM - config.BUTTON_X_OFFSET
-    settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    stop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    # NEW: Statistics button below the other buttons
-    stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+
+    exit_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    pause_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     font_button = pygame.font.Font(None, 24)
+
+    draw_button(screen, exit_button_rect, "Exit", font_button)
+    draw_button(screen, pause_button_rect, "Stop/Play", font_button)
     draw_button(screen, settings_button_rect, "Settings", font_button)
-    draw_button(screen, stop_button_rect, "Exit", font_button)
     draw_button(screen, add_pred_button_rect, "Add Pred", font_button)
     draw_button(screen, add_prey_button_rect, "Add Prey", font_button)
     draw_button(screen, stats_button_rect, "Statistics", font_button)
