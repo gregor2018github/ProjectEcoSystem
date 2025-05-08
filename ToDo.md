@@ -1,7 +1,5 @@
 ### Todo
 
-- [ ] Add pause button
-- [ ] Add event_handler.py and refactor existing code accordingly
 - [ ] Add click effects for buttons
 - [ ] Add hover effects for buttons
 - [ ] Add age system
@@ -19,4 +17,6 @@
  
 ### Done ✓
 
+- [x] Add event_handler.py and refactor existing code accordingly
+- [x] Add pause button
 - [x] Refactor into several scripts for readability
