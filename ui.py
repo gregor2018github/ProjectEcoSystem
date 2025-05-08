@@ -1,5 +1,10 @@
 import pygame
 import config
+import time
+
+# Track the button that was last clicked and when
+button_clicked = None
+button_click_time = 0
 
 def draw_line_chart(surface, rect, series, color):
     if len(series) < 2:
@@ -18,6 +23,40 @@ def draw_line_chart(surface, rect, series, color):
         x = rect.left + i * step
         points.append((x, y))
     pygame.draw.lines(surface, color, False, points, 2)
+
+# Helper function to draw nicer buttons
+def draw_button(surface, rect, text, font):
+    # Check if this button is currently being clicked to apply visual effect
+    button_effect = False
+    current_time = pygame.time.get_ticks()
+    
+    if config.BUTTON_CLICK_VISUAL_EFFECT and button_clicked == rect and \
+       current_time - button_click_time < config.BUTTON_CLICK_DURATION:
+        # Visual click effect: darker background, shifted position
+        pygame.draw.rect(surface, (40, 80, 60), pygame.Rect(
+            rect.left + 2, rect.top + 2, rect.width - 2, rect.height - 2
+        ), border_radius=8)
+        button_effect = True
+    else:
+        # Normal button appearance
+        pygame.draw.rect(surface, (60, 100, 80), rect, border_radius=8)
+    
+    # Always draw the border
+    pygame.draw.rect(surface, (255, 255, 255), rect, 2, border_radius=8)
+    
+    # Adjust text position slightly when button is pressed
+    text_surface = font.render(text, True, (255, 255, 255))
+    if button_effect:
+        text_rect = text_surface.get_rect(center=(rect.centerx + 1, rect.centery + 1))
+    else:
+        text_rect = text_surface.get_rect(center=rect.center)
+    surface.blit(text_surface, text_rect)
+
+# Register a button click for visual effect
+def register_button_click(rect):
+    global button_clicked, button_click_time
+    button_clicked = rect
+    button_click_time = pygame.time.get_ticks()
 
 # Modified statistics window to be fullscreen with updated headers and without axis descriptions
 def show_statistics_window(predators, preys, grass):
@@ -39,6 +78,7 @@ def show_statistics_window(predators, preys, grass):
                 running_stats = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if close_rect.collidepoint(event.pos):
+                    register_button_click(close_rect)
                     running_stats = False
                     
         stat_screen.fill((30, 30, 30))
@@ -103,14 +143,6 @@ def show_statistics_window(predators, preys, grass):
     stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     pygame.display.set_caption("Simulation")
 
-# Helper function to draw nicer buttons
-def draw_button(surface, rect, text, font):
-    pygame.draw.rect(surface, (60, 100, 80), rect, border_radius=8)
-    pygame.draw.rect(surface, (255, 255, 255), rect, 2, border_radius=8)
-    text_surface = font.render(text, True, (255, 255, 255))
-    text_rect = text_surface.get_rect(center=rect.center)
-    surface.blit(text_surface, text_rect)
-
 # Updated settings_menu() with scrolling and a Reset button
 def settings_menu(screen):
     modal_rect = pygame.Rect(200, 100, 600, 400)
@@ -145,6 +177,7 @@ def settings_menu(screen):
                 action = "cancel"
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if btn_rect_standard.collidepoint(event.pos):
+                    register_button_click(btn_rect_standard)
                     # Before exiting, validate active editing field
                     if active_key is not None:
                         try:
@@ -159,6 +192,7 @@ def settings_menu(screen):
                     action = "restart"
                     running_settings = False
                 elif btn_rect_resume.collidepoint(event.pos):
+                    register_button_click(btn_rect_resume)
                     if active_key is not None:
                         try:
                             val = float(active_text)
@@ -172,9 +206,11 @@ def settings_menu(screen):
                     action = "resume"
                     running_settings = False
                 elif btn_rect_cancel.collidepoint(event.pos):
+                    register_button_click(btn_rect_cancel)
                     action = "cancel"
                     running_settings = False
                 elif btn_rect_reset.collidepoint(event.pos):
+                    register_button_click(btn_rect_reset)
                     for key, value in config.default_settings.items():
                         settings[key] = value
                         error_fields.pop(key, None)

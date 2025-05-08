@@ -56,6 +56,11 @@ BUTTON_X_OFFSET = 100
 BUTTON_Y_START = 10
 BUTTON_Y_GAP = 40
 
+# Button click effects
+BUTTON_CLICK_SOUND_ENABLED = True  # Set to False to disable click sounds
+BUTTON_CLICK_VISUAL_EFFECT = True  # Set to False to disable visual effects
+BUTTON_CLICK_DURATION = 100  # milliseconds for the visual effect to last
+
 # Font
 FONT_COLORS = (255, 255, 255)  # White
 

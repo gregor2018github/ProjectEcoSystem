@@ -5,12 +5,13 @@ from animals import Predator, Prey   # Animal classes
 from grass import Grass              # Grass class
 from simulation import setup_simulation, update_simulation              # Simulation functions
 from ui import draw_simulation, settings_menu, show_statistics_window   # UI functions
-from event_handler import process_event  # Event handling function
+from event_handler import process_event, initialize_sounds  # Event handling function
 
 # MAIN 
 
 def main():
     pygame.init()
+    initialize_sounds()
 
     # set the size of the game field, either by locked values or by display size
     if not config.LOCKED_SCREEN_SIZE:
