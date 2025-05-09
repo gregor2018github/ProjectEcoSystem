@@ -4,7 +4,9 @@ import config
 import os
 from animals import Predator, Prey
 from simulation import setup_simulation
-from ui import settings_menu, show_statistics_window, register_button_click
+from ui import register_button_click
+from settings_window import SettingsWindow
+from statistics_window import StatisticsWindow
 
 # Initialize click sound
 click_sound = None
@@ -48,7 +50,8 @@ def process_event(event, predators, preys, grass, screen, running, stopped):
         elif settings_button_rect.collidepoint(mouse_pos):
             register_button_click(settings_button_rect)
             play_click_sound()
-            action, new_settings = settings_menu(screen)
+            settings_win = SettingsWindow(screen)
+            action, new_settings = settings_win.run()
             # Save new settings to global simulation parameters
             config.PREY_MAX_FOOD = new_settings["Prey Health"]
             config.PREDATOR_MAX_FOOD = new_settings["Predator Health"]
@@ -84,9 +87,9 @@ def process_event(event, predators, preys, grass, screen, running, stopped):
         elif stats_button_rect.collidepoint(mouse_pos):
             register_button_click(stats_button_rect)
             play_click_sound()
-            show_statistics_window(predators, preys, grass)
-            # Ensure the main screen is re-established as the display mode after stats window closes
-            pygame.display.set_mode((config.XLIM, config.YLIM))
+            stats_win = StatisticsWindow()
+            stats_win.run()
+            pygame.display.set_caption("Simulation")
             stopped = False # Resume simulation rendering
 
     return running, stopped, predators, preys, grass

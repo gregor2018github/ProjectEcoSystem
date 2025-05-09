@@ -4,7 +4,7 @@ import config                        # CONSTANTS
 from animals import Predator, Prey   # Animal classes
 from grass import Grass              # Grass class
 from simulation import setup_simulation, update_simulation              # Simulation functions
-from ui import draw_simulation, settings_menu, show_statistics_window   # UI functions
+from ui import draw_simulation       # UI function
 from event_handler import process_event, initialize_sounds  # Event handling function
 
 # MAIN 
