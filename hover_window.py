@@ -25,6 +25,10 @@ class HoverWindow:
         status = animal.get_status()
         self.lines.append(f"Status: {status}")
 
+        current_consumption = animal.cur_consumption
+        if current_consumption is not None:
+            self.lines.append(f"Current Consumption: {round(current_consumption, 2)}")
+
         if isinstance(animal, Predator):
             self.lines.append(f"Prey Eaten: {animal.prey_eaten}")
         elif isinstance(animal, Prey):

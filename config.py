@@ -28,6 +28,8 @@ PREY_REPRODUCTION_RATE = 0.002 # conditionless reproduction rate
 PREY_MAX_FOOD = 200
 PREY_FOOD_GAIN_PER_GRASS = 0.15 # x% of grass amount of the chunk the prey is in
 PREY_STARV_BORDER = 0.2  # x% of max food
+PREY_REGULAR_ENERGY_COST = 0.95
+PREY_FLEE_ENERGY_COST = 1.00
 PREY_MAX_AGE = 900 # max age in rounds
 PREY_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age preys
 

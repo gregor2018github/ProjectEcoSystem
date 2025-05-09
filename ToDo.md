@@ -1,7 +1,5 @@
 ### Todo
 
-- [ ] Add "Starving" with True or False to the hover statistics
-- [ ] Add current energy consumption to the hover statistics
 - [ ] Add more variables to the settings menu
   - [ ] Max ages
   - [ ] Food consumption levels for different activities
@@ -18,6 +16,8 @@
  
 ### Done ✓
 
+- [x] Add current energy consumption to the hover statistics
+- [x] Add "Starving" with True or False to the hover statistics
 - [x] Add hover statistics for animal instances
 - [x] Add age system
   - [x] Count and store age per animal instance

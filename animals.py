@@ -11,7 +11,8 @@ class Animal(ABC):
         self.alive = True
         self.starving = False  # attribute to track starvation
         self.killed = False  # attribute to track kill events
-        self.age = 0  
+        self.age = 0
+        self.cur_consumption = 0  
 
     def get_rect(self):
         # SIZE must be defined in subclasses
@@ -31,12 +32,18 @@ class Animal(ABC):
         if isinstance(self, Predator):
             # Predator energy consumption logic
             if self.hunting:
-                self.food -= config.PREDATOR_HUNTING_ENERGY_COST
+                self.cur_consumption = config.PREDATOR_HUNTING_ENERGY_COST
             else:
-                self.food -= config.PREDATOR_REGULAR_ENERGY_COST
+                self.cur_consumption = config.PREDATOR_REGULAR_ENERGY_COST
         else:
             # Prey energy consumption logic
-            self.food -= 1
+            if self.is_fleeing:
+                self.cur_consumption = config.PREY_FLEE_ENERGY_COST
+            else:
+                self.cur_consumption = config.PREY_REGULAR_ENERGY_COST
+
+        # Reduce food based on current consumption        
+        self.food -= self.cur_consumption
         if self.food <= 0:
             return True  # Mark as dead if food is depleted
         else: # else check if the animal is starving
@@ -211,13 +218,8 @@ class Prey(Animal):
                 self.alive = False
                 config.prey_dead_by_age += 1
                 return
-        # check for death by starvation
-        if self.consumed_all_energy():  # Reduce food and possibly mark dead or starving
-            self.alive = False
-            config.prey_dead_by_starvation += 1
-            return
 
-        # Flee from predators
+        # Flee from predators (animal flees first, then the cost of movign is calculated)
         flee_dx = 0
         flee_dy = 0
         for predator in animals:
@@ -235,6 +237,12 @@ class Prey(Animal):
         else:
             self.x += random.uniform(-1, 1)
             self.y += random.uniform(-1, 1)
+        
+        # check for death by starvation
+        if self.consumed_all_energy():  # Reduce food and possibly mark dead or starving
+            self.alive = False
+            config.prey_dead_by_starvation += 1
+            return
         
         # Move away from areas with little grass
         chunk = (int(self.x) // config.CHUNKSIZE, int(self.y) // config.CHUNKSIZE)
