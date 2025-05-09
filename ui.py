@@ -62,27 +62,46 @@ def draw_simulation(screen, predators, preys, grass, hover_animal=None, current_
     font = pygame.font.Font(None, config.STATS_FONT_SIZE)
     # Format rounds in thousands (K)
     rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
-    stats = [
-        f"Rounds: {rounds_display}",
+    stats_descr = [
+        f"Rounds:",
         "",  # Blank line for separation
-        f"Prey: {len(preys)} (Born: {config.prey_born})",
-        f"Predators: {len(predators)} (Born: {config.predator_born})",
+        f"Prey:",
+        f"Predators:",
         "",  # Blank line
-        "Prey Deaths:",
-        f"  Total: {config.prey_deceased}",
-        f"    Starvation: {config.prey_dead_by_starvation}",
-        f"    Age: {config.prey_dead_by_age}",
-        f"    Hunted: {config.prey_dead_by_hunting}",
+        f"Prey Deaths:",
+        f"    By Starvation:",
+        f"    By Old Age:",
+        f"    Hunted Down:",
         "",  # Blank line
-        "Predator Deaths:",
-        f"  Total: {config.predator_deceased}",
-        f"    Starvation: {config.predator_dead_by_starvation}",
-        f"    Age: {config.predator_dead_by_age}",
+        f"Predator Deaths:",
+        f"    By Starvation:",
+        f"    By Old Age:",
     ]
+    stats = [
+        f"{rounds_display}",
+        "",  # Blank line for separation
+        f"{len(preys)} (Born: {config.prey_born})",
+        f"{len(predators)} (Born: {config.predator_born})",
+        "",  # Blank line
+        f"{config.prey_deceased}",
+        f"{config.prey_dead_by_starvation}",
+        f"{config.prey_dead_by_age}",
+        f"{config.prey_dead_by_hunting}",
+        "",  # Blank line
+        f"{config.predator_deceased}",
+        f"{config.predator_dead_by_starvation}",
+        f"{config.predator_dead_by_age}",
+    ]
+    y_offset = config.STATS_Y_OFFSET
+    # Draw the statistics text
+    for line in stats_descr:
+        text_surface = font.render(line, True, config.FONT_COLORS)
+        screen.blit(text_surface, (config.STATS_X_OFFSET, y_offset))
+        y_offset += config.STATS_LINE_HEIGHT
     y_offset = config.STATS_Y_OFFSET
     for line in stats:
         text_surface = font.render(line, True, config.FONT_COLORS)
-        screen.blit(text_surface, (config.STATS_X_OFFSET, y_offset))
+        screen.blit(text_surface, (config.STATS_X_OFFSET + 160, y_offset))
         y_offset += config.STATS_LINE_HEIGHT
 
     # Buttons on the right side of the screen
