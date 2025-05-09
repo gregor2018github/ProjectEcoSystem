@@ -19,6 +19,7 @@ PREDATOR_REGULAR_ENERGY_COST = 0.7
 PREDATOR_HUNTING_ENERGY_COST = 0.9 
 PREDATOR_STARV_BORDER = 0.2   # x% of max food
 PREDATOR_MAX_AGE = 1200 # max age in rounds
+PREDATOR_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age predators
 
 # PREY behavior
 PREY_SPEED = 3
@@ -28,6 +29,7 @@ PREY_MAX_FOOD = 200
 PREY_FOOD_GAIN_PER_GRASS = 0.15 # x% of grass amount of the chunk the prey is in
 PREY_STARV_BORDER = 0.2  # x% of max food
 PREY_MAX_AGE = 900 # max age in rounds
+PREY_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age preys
 
 # Grass
 DEFAULT_GRASS_AMOUNT = 6

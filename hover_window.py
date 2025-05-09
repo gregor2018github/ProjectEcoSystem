@@ -24,7 +24,16 @@ class HoverWindow:
         
         status = animal.get_status()
         self.lines.append(f"Status: {status}")
+
+        if isinstance(animal, Predator):
+            self.lines.append(f"Prey Eaten: {animal.prey_eaten}")
+        elif isinstance(animal, Prey):
+            self.lines.append(f"Grass Eaten: {round(animal.grass_eaten, 0)}")
         
+        starvation_bool = animal.starving
+        self.lines.append(f"Starving: " + ("Yes" if starvation_bool else "No"))
+
+
         self.lines.append(f"Position: ({int(animal.x)}, {int(animal.y)})")
 
 

@@ -71,6 +71,7 @@ class Predator(Animal):
         self.food = config.PREDATOR_MAX_FOOD  # Initialize predator food
         self.hunting = False  # attribute to track hunting state
         self.avoiding_predator_flag = False # For status display
+        self.prey_eaten = 0
 
     def get_status(self):
         if not self.alive:
@@ -98,9 +99,10 @@ class Predator(Animal):
         # check for death by age
         self.age += 1
         if self.age > config.PREDATOR_MAX_AGE:
-            self.alive = False
-            config.predator_dead_by_age += 1
-            return
+            if random.uniform(0, 1) > config.PREDATOR_HIGH_AGE_HEALTH: # x% chance to die of old age
+                self.alive = False
+                config.predator_dead_by_age += 1
+                return
         # check for death by starvation
         if self.consumed_all_energy():  # Reduce food and possibly mark dead or starving
             self.alive = False
@@ -158,6 +160,7 @@ class Predator(Animal):
                 if min_dist_prey < self.SIZE + target.SIZE: # No need to check target.alive again, done in prey finding loop
                     target.alive = False
                     self.killed = True  # Mark kill for reproduction
+                    self.prey_eaten += 1
                     config.prey_dead_by_hunting += 1
                     # Add food gain on kill; cap to max
                     self.food = min(config.PREDATOR_MAX_FOOD, self.food + config.PREDATOR_FOOD_GAIN_PER_KILL)
@@ -167,7 +170,7 @@ class Predator(Animal):
                 self.x += random.uniform(-1, 1)
                 self.y += random.uniform(-1, 1)
 
-        # Boundary checks and energy consumption
+        # Boundary checks
         self.x = max(0, min(config.XLIM, self.x))
         self.y = max(0, min(config.YLIM, self.y))
         
@@ -180,6 +183,7 @@ class Prey(Animal):
         self.food = config.PREY_MAX_FOOD  # Initialize prey food
         self.is_fleeing = False
         self.is_eating = False
+        self.grass_eaten = 0
     
     def get_status(self):
         if not self.alive:
@@ -203,9 +207,10 @@ class Prey(Animal):
         # check for death by age
         self.age += 1
         if self.age > config.PREY_MAX_AGE:
-            self.alive = False
-            config.prey_dead_by_age += 1
-            return
+            if random.uniform(0, 1) > config.PREY_HIGH_AGE_HEALTH:  # x% chance to die of old age
+                self.alive = False
+                config.prey_dead_by_age += 1
+                return
         # check for death by starvation
         if self.consumed_all_energy():  # Reduce food and possibly mark dead or starving
             self.alive = False
@@ -262,6 +267,7 @@ class Prey(Animal):
             # Prey is eating if it gains food and is not full, and grass is available
             if gain > 0 and self.food < config.PREY_MAX_FOOD and grass[chunk].amount > 0:
                 self.is_eating = True
+                self.grass_eaten += gain
             self.food = min(config.PREY_MAX_FOOD, self.food + gain)
             grass[chunk].amount = max(0, grass[chunk].amount - 1)
 
