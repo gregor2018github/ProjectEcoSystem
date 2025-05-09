@@ -13,6 +13,15 @@ class Animal(ABC):
         self.killed = False  # attribute to track kill events
         self.age = 0  
 
+    def get_rect(self):
+        # SIZE must be defined in subclasses
+        return pygame.Rect(self.x - self.SIZE, self.y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
+
+    @abstractmethod
+    def get_status(self):
+        """Returns a string describing the animal's current status."""
+        pass
+
     def consumed_all_energy(self):
         """
         Check if the animal has consumed all its energy, returns true in case.
@@ -61,12 +70,25 @@ class Predator(Animal):
         super().__init__(x, y)
         self.food = config.PREDATOR_MAX_FOOD  # Initialize predator food
         self.hunting = False  # attribute to track hunting state
+        self.avoiding_predator_flag = False # For status display
+
+    def get_status(self):
+        if not self.alive:
+            return "Deceased"
+        if self.hunting:
+            return "Hunting"
+        if self.avoiding_predator_flag:
+            return "Avoiding Predator"
+        if self.starving:
+            return "Starving"
+        return "Idle"
     
     def draw(self, screen):
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
     
     def update(self, animals, grass):
         self.killed = False # means it killed something this round
+        self.avoiding_predator_flag = False # Reset at the start of each update cycle
         target = None
         min_dist_prey = float('inf')
         avoid_dx = 0
@@ -104,6 +126,7 @@ class Predator(Animal):
         # If avoiding predators, move away and skip hunting, but only if not starving
         if config.PRED_AVOID_PRED and predator_too_close and not self.starving:
             self.hunting = False
+            self.avoiding_predator_flag = True # Set status flag
             norm = (avoid_dx**2 + avoid_dy**2)**0.5 or 1 # Normalize the total avoidance vector
             self.x += (avoid_dx / norm) * config.PREDATOR_SPEED 
             self.y += (avoid_dy / norm) * config.PREDATOR_SPEED
@@ -155,11 +178,28 @@ class Prey(Animal):
     def __init__(self, x, y):
         super().__init__(x, y)
         self.food = config.PREY_MAX_FOOD  # Initialize prey food
+        self.is_fleeing = False
+        self.is_eating = False
     
+    def get_status(self):
+        if not self.alive:
+            return "Deceased"
+        if self.is_fleeing:
+            return "Fleeing"
+        if self.is_eating: # Eating takes precedence over starving if both are true
+            return "Eating Grass"
+        if self.starving:
+            return "Starving"
+        return "Idle"
+
     def draw(self, screen):
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
   
     def update(self, animals, grass):
+        # Reset status flags at the beginning of each update
+        self.is_fleeing = False
+        self.is_eating = False
+
         # check for death by age
         self.age += 1
         if self.age > config.PREY_MAX_AGE:
@@ -186,6 +226,7 @@ class Prey(Animal):
             norm = (flee_dx**2 + flee_dy**2) ** 0.5 or 1
             self.x += (flee_dx / norm) * config.PREY_SPEED
             self.y += (flee_dy / norm) * config.PREY_SPEED
+            self.is_fleeing = True # Set status flag
         else:
             self.x += random.uniform(-1, 1)
             self.y += random.uniform(-1, 1)
@@ -218,6 +259,9 @@ class Prey(Animal):
         # Consume grass and gain food based on current patch
         if chunk in grass:
             gain = grass[chunk].amount * config.PREY_FOOD_GAIN_PER_GRASS
+            # Prey is eating if it gains food and is not full, and grass is available
+            if gain > 0 and self.food < config.PREY_MAX_FOOD and grass[chunk].amount > 0:
+                self.is_eating = True
             self.food = min(config.PREY_MAX_FOOD, self.food + gain)
             grass[chunk].amount = max(0, grass[chunk].amount - 1)
 

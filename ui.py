@@ -1,5 +1,6 @@
 import pygame
 import config
+from hover_window import HoverWindow # Import HoverWindow
 
 # Track the button that was last clicked and when
 button_clicked = None
@@ -47,7 +48,8 @@ def register_button_click(rect):
     button_click_time = pygame.time.get_ticks()
 
 # Updated draw_simulation(): use draw_button for all buttons
-def draw_simulation(screen, predators, preys, grass):
+# Add hover_animal, current_mouse_pos, and locked_animal parameters
+def draw_simulation(screen, predators, preys, grass, hover_animal=None, current_mouse_pos=None, locked_animal=None):
     screen.fill((0, 0, 0))
     for (i, j), g in grass.items(): # Draw the grass grid
         pos = (i * config.CHUNKSIZE, j * config.CHUNKSIZE)
@@ -85,7 +87,8 @@ def draw_simulation(screen, predators, preys, grass):
 
     # Buttons on the right side of the screen
     button_x = config.XLIM - config.BUTTON_X_OFFSET
-    mouse_pos = pygame.mouse.get_pos() # Get mouse position for hover effect
+    # Get current mouse position for button hover effects, as current_mouse_pos might be from a past event if mouse isn't moving
+    button_hover_mouse_pos = pygame.mouse.get_pos() 
 
     exit_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     pause_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
@@ -95,11 +98,26 @@ def draw_simulation(screen, predators, preys, grass):
     stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     font_button = pygame.font.Font(None, 24)
 
-    draw_button(screen, exit_button_rect, "Exit", font_button, mouse_pos)
-    draw_button(screen, pause_button_rect, "Stop/Play", font_button, mouse_pos)
-    draw_button(screen, settings_button_rect, "Settings", font_button, mouse_pos)
-    draw_button(screen, add_pred_button_rect, "Add Pred", font_button, mouse_pos)
-    draw_button(screen, add_prey_button_rect, "Add Prey", font_button, mouse_pos)
-    draw_button(screen, stats_button_rect, "Statistics", font_button, mouse_pos)
+    draw_button(screen, exit_button_rect, "Exit", font_button, button_hover_mouse_pos)
+    draw_button(screen, pause_button_rect, "Stop/Play", font_button, button_hover_mouse_pos)
+    draw_button(screen, settings_button_rect, "Settings", font_button, button_hover_mouse_pos)
+    draw_button(screen, add_pred_button_rect, "Add Pred", font_button, button_hover_mouse_pos)
+    draw_button(screen, add_prey_button_rect, "Add Prey", font_button, button_hover_mouse_pos)
+    draw_button(screen, stats_button_rect, "Statistics", font_button, button_hover_mouse_pos)
+    
+    # Draw locked animal's info window if one is selected and alive
+    if locked_animal and locked_animal.alive:
+        # Anchor position for locked window is the animal's current position
+        locked_anchor_pos = (locked_animal.x, locked_animal.y)
+        hw_locked = HoverWindow(locked_animal, locked_anchor_pos)
+        hw_locked.draw(screen)
+    
+    # Draw hover window if an animal is being hovered over,
+    # it's alive, and it's not the currently locked animal (or no animal is locked)
+    if hover_animal and hover_animal.alive and current_mouse_pos:
+        if locked_animal is None or hover_animal != locked_animal:
+            # Anchor position for hover window is the current mouse position
+            hw_hover = HoverWindow(hover_animal, current_mouse_pos)
+            hw_hover.draw(screen)
     
     pygame.display.flip()
