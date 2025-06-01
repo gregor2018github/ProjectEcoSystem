@@ -73,16 +73,37 @@ def process_event(event, predators, preys, grass, screen, running, stopped, hove
             play_click_sound()
             settings_win = SettingsWindow(screen)
             action, new_settings = settings_win.run()
+
             # Save new settings to global simulation parameters
-            config.PREY_MAX_FOOD = new_settings["Prey Health"]
-            config.PREDATOR_MAX_FOOD = new_settings["Predator Health"]
-            config.PREY_REPRODUCTION_RATE = new_settings["Prey Reproduction Rate"]
-            config.PREDATOR_REPRODUCTION_RATE = new_settings["Predator Reproduction Rate"]
-            config.GRASS_GROWTH_RATE = new_settings["Grass Growth Rate"]
-            config.GRASS_MAX_AMOUNT = new_settings["Max Grass per Field"]
-            config.PREY_FEAR_DISTANCE = new_settings["Prey Fear Distance"]
-            config.PREY_SPEED = new_settings["Prey Speed"]
             config.PREDATOR_SPEED = new_settings["Predator Speed"]
+            config.PREDATOR_PREDATOR_AVOID_DISTANCE = new_settings["Predator Avoidance Distance"]
+            config.PREDATOR_SMELL_DISTANCE = new_settings["Predator Smell Distance"]
+            config.PREDATOR_REPRODUCTION_RATE = new_settings["Predator Reproduction Rate"]
+            config.PREDATOR_MAX_FOOD = new_settings["Predator Health"]
+            config.PREDATOR_FOOD_GAIN_PER_KILL = new_settings["Predator Food Gain per Kill"]
+            config.PREDATOR_REGULAR_ENERGY_COST = new_settings["Predator Regular Energy Cost"]
+            config.PREDATOR_HUNTING_ENERGY_COST = new_settings["Predator Hunting Energy Cost"]
+            config.PREDATOR_STARV_BORDER = new_settings["Predator Starvation Border"]
+            config.PREDATOR_MAX_AGE = new_settings["Predator Max Age"]
+            config.PREDATOR_HIGH_AGE_HEALTH = new_settings["Predator High Age Health"]
+            
+            config.PREY_SPEED = new_settings["Prey Speed"]
+            config.PREY_FEAR_DISTANCE = new_settings["Prey Fear Distance"]
+            config.PREY_REPRODUCTION_RATE = new_settings["Prey Reproduction Rate"]
+            config.PREY_FOOD_GAIN_PER_GRASS = new_settings["Prey Food Gain per Grass"]
+            config.PREY_MAX_FOOD = new_settings["Prey Health"]
+            config.PREY_STARV_BORDER = new_settings["Prey Starvation Border"]
+            config.PREY_REGULAR_ENERGY_COST = new_settings["Prey Regular Energy Cost"]
+            config.PREY_FLEE_ENERGY_COST = new_settings["Prey Flee Energy Cost"]
+            config.PREY_MAX_AGE = new_settings["Prey Max Age"]
+            config.PREY_HIGH_AGE_HEALTH = new_settings["Prey High Age Health"]
+            
+            config.GRASS_GROWTH_RATE = new_settings["Grass Growth Rate"]
+            config.GRASS_MAX_AMOUNT = new_settings["Grass max per Field"]
+            config.DEFAULT_GRASS_AMOUNT = new_settings["Grass Start Value"]
+            
+            config.FPS = new_settings["FPS"]
+            
             event_handled_by_button = True # Settings window interaction is a button interaction
             
             if action == "restart":

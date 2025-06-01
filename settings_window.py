@@ -13,16 +13,36 @@ class SettingsWindow:
         self.btn_rect_reset = pygame.Rect(self.modal_rect.left + 250, self.modal_rect.bottom - 110, 150, 30)
         
         self.settings = {
-            "Prey Health": config.PREY_MAX_FOOD,
-            "Predator Health": config.PREDATOR_MAX_FOOD,
-            "Prey Reproduction Rate": config.PREY_REPRODUCTION_RATE,
+            "Predator Speed": config.PREDATOR_SPEED,
+            "Predator Avoidance Distance": config.PREDATOR_PREDATOR_AVOID_DISTANCE,
+            "Predator Smell Distance": config.PREDATOR_SMELL_DISTANCE,
             "Predator Reproduction Rate": config.PREDATOR_REPRODUCTION_RATE,
-            "Grass Growth Rate": config.GRASS_GROWTH_RATE,
-            "Max Grass per Field": config.GRASS_MAX_AMOUNT,
-            "Prey Fear Distance": config.PREY_FEAR_DISTANCE,
+            "Predator Health": config.PREDATOR_MAX_FOOD,
+            "Predator Food Gain per Kill": config.PREDATOR_FOOD_GAIN_PER_KILL,
+            "Predator Regular Energy Cost": config.PREDATOR_REGULAR_ENERGY_COST,
+            "Predator Hunting Energy Cost": config.PREDATOR_HUNTING_ENERGY_COST,
+            "Predator Starvation Border": config.PREDATOR_STARV_BORDER,
+            "Predator Max Age": config.PREDATOR_MAX_AGE,
+            "Predator High Age Health": config.PREDATOR_HIGH_AGE_HEALTH,
+
             "Prey Speed": config.PREY_SPEED,
-            "Predator Speed": config.PREDATOR_SPEED
+            "Prey Fear Distance": config.PREY_FEAR_DISTANCE,
+            "Prey Reproduction Rate": config.PREY_REPRODUCTION_RATE,
+            "Prey Food Gain per Grass": config.PREY_FOOD_GAIN_PER_GRASS,
+            "Prey Health": config.PREY_MAX_FOOD,
+            "Prey Starvation Border": config.PREY_STARV_BORDER,
+            "Prey Regular Energy Cost": config.PREY_REGULAR_ENERGY_COST,
+            "Prey Flee Energy Cost": config.PREY_FLEE_ENERGY_COST,
+            "Prey Max Age": config.PREY_MAX_AGE,
+            "Prey High Age Health": config.PREY_HIGH_AGE_HEALTH,
+
+            "Grass Growth Rate": config.GRASS_GROWTH_RATE,
+            "Grass max per Field": config.GRASS_MAX_AMOUNT,
+            "Grass Start Value": config.DEFAULT_GRASS_AMOUNT,
+
+            "FPS": config.FPS
         }
+        
         self.error_fields = {}
         self.scroll_offset = 0
         self.active_key = None

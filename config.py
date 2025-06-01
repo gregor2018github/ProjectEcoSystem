@@ -77,18 +77,37 @@ FONT_COLORS = (255, 255, 255)  # White
 
 # Global default settings dictionary (standard values)
 default_settings = {
-    "Prey Health": PREY_MAX_FOOD,
-    "Predator Health": PREDATOR_MAX_FOOD,
-    "Prey Reproduction Rate": PREY_REPRODUCTION_RATE,
+    "Predator Speed": PREDATOR_SPEED,
+    "Predator Avoidance Distance": PREDATOR_PREDATOR_AVOID_DISTANCE,
+    "Predator Smell Distance": PREDATOR_SMELL_DISTANCE,
     "Predator Reproduction Rate": PREDATOR_REPRODUCTION_RATE,
-    "Grass Growth Rate": GRASS_GROWTH_RATE,
-    "Max Grass per Field": GRASS_MAX_AMOUNT,
-    "Prey Fear Distance": PREY_FEAR_DISTANCE,
+    "Predator Health": PREDATOR_MAX_FOOD,
+    "Predator Food Gain per Kill": PREDATOR_FOOD_GAIN_PER_KILL,
+    "Predator Regular Energy Cost": PREDATOR_REGULAR_ENERGY_COST,
+    "Predator Hunting Energy Cost": PREDATOR_HUNTING_ENERGY_COST,
+    "Predator Starvation Border": PREDATOR_STARV_BORDER,
+    "Predator Max Age": PREDATOR_MAX_AGE,
+    "Predator High Age Health": PREDATOR_HIGH_AGE_HEALTH,
+
     "Prey Speed": PREY_SPEED,
-    "Predator Speed": PREDATOR_SPEED
+    "Prey Fear Distance": PREY_FEAR_DISTANCE,
+    "Prey Reproduction Rate": PREY_REPRODUCTION_RATE,
+    "Prey Food Gain per Grass": PREY_FOOD_GAIN_PER_GRASS,
+    "Prey Health": PREY_MAX_FOOD,
+    "Prey Starvation Border": PREY_STARV_BORDER,
+    "Prey Regular Energy Cost": PREY_REGULAR_ENERGY_COST,
+    "Prey Flee Energy Cost": PREY_FLEE_ENERGY_COST,
+    "Prey Max Age": PREY_MAX_AGE,
+    "Prey High Age Health": PREY_HIGH_AGE_HEALTH,
+
+    "Grass Growth Rate": GRASS_GROWTH_RATE,
+    "Grass max per Field": GRASS_MAX_AMOUNT,
+    "Grass Start Value": DEFAULT_GRASS_AMOUNT,
+
+    "FPS": FPS
 }
 
-# Global statistics history dictionary for charting (added "Grass Total")
+# Global statistics history dictionary for charting
 stats_history = {
     "Prey Count": [],
     "Predator Count": [],
