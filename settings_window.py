@@ -1,47 +1,73 @@
 import pygame
 import config
 from ui import draw_button, register_button_click
+from collections import OrderedDict
 
 class SettingsWindow:
     def __init__(self, screen):
         self.screen = screen
-        self.modal_rect = pygame.Rect(200, 100, 600, 400)
+        # Center the modal window on the screen
+        screen_width, screen_height = screen.get_size()
+        modal_width, modal_height = 600, 500
+        modal_x = (screen_width - modal_width) // 2
+        modal_y = (screen_height - modal_height) // 2
+        self.modal_rect = pygame.Rect(modal_x, modal_y, modal_width, modal_height)
         self.font = pygame.font.Font(None, 32)
-        self.btn_rect_standard = pygame.Rect(self.modal_rect.left + 50, self.modal_rect.bottom - 60, 100, 40)
-        self.btn_rect_resume = pygame.Rect(self.modal_rect.left + 250, self.modal_rect.bottom - 60, 100, 40)
-        self.btn_rect_cancel = pygame.Rect(self.modal_rect.left + 450, self.modal_rect.bottom - 60, 100, 40)
-        self.btn_rect_reset = pygame.Rect(self.modal_rect.left + 250, self.modal_rect.bottom - 110, 150, 30)
         
-        self.settings = {
-            "Predator Speed": config.PREDATOR_SPEED,
-            "Predator Avoidance Distance": config.PREDATOR_PREDATOR_AVOID_DISTANCE,
-            "Predator Smell Distance": config.PREDATOR_SMELL_DISTANCE,
-            "Predator Reproduction Rate": config.PREDATOR_REPRODUCTION_RATE,
-            "Predator Health": config.PREDATOR_MAX_FOOD,
-            "Predator Food Gain per Kill": config.PREDATOR_FOOD_GAIN_PER_KILL,
-            "Predator Regular Energy Cost": config.PREDATOR_REGULAR_ENERGY_COST,
-            "Predator Hunting Energy Cost": config.PREDATOR_HUNTING_ENERGY_COST,
-            "Predator Starvation Border": config.PREDATOR_STARV_BORDER,
-            "Predator Max Age": config.PREDATOR_MAX_AGE,
-            "Predator High Age Health": config.PREDATOR_HIGH_AGE_HEALTH,
-
-            "Prey Speed": config.PREY_SPEED,
-            "Prey Fear Distance": config.PREY_FEAR_DISTANCE,
-            "Prey Reproduction Rate": config.PREY_REPRODUCTION_RATE,
-            "Prey Food Gain per Grass": config.PREY_FOOD_GAIN_PER_GRASS,
-            "Prey Health": config.PREY_MAX_FOOD,
-            "Prey Starvation Border": config.PREY_STARV_BORDER,
-            "Prey Regular Energy Cost": config.PREY_REGULAR_ENERGY_COST,
-            "Prey Flee Energy Cost": config.PREY_FLEE_ENERGY_COST,
-            "Prey Max Age": config.PREY_MAX_AGE,
-            "Prey High Age Health": config.PREY_HIGH_AGE_HEALTH,
-
-            "Grass Growth Rate": config.GRASS_GROWTH_RATE,
-            "Grass max per Field": config.GRASS_MAX_AMOUNT,
-            "Grass Start Value": config.DEFAULT_GRASS_AMOUNT,
-
-            "FPS": config.FPS
-        }
+        # Center buttons within the modal window
+        button_width = 100
+        button_height = 40
+        button_spacing = 20
+        total_button_width = 3 * button_width + 2 * button_spacing
+        start_x = self.modal_rect.left + (self.modal_rect.width - total_button_width) // 2
+        
+        self.btn_rect_standard = pygame.Rect(start_x, self.modal_rect.bottom - 60, button_width, button_height)
+        self.btn_rect_resume = pygame.Rect(start_x + button_width + button_spacing, self.modal_rect.bottom - 60, button_width, button_height)
+        self.btn_rect_cancel = pygame.Rect(start_x + 2 * (button_width + button_spacing), self.modal_rect.bottom - 60, button_width, button_height)
+        
+        # Center reset button
+        reset_width = 150
+        reset_x = self.modal_rect.left + (self.modal_rect.width - reset_width) // 2
+        self.btn_rect_reset = pygame.Rect(reset_x, self.modal_rect.bottom - 110, reset_width, 30)
+        
+        # Organize settings with section separators for better readability
+        self.settings = OrderedDict([
+            # Predator Settings
+            ("Predator Speed", config.PREDATOR_SPEED),
+            ("Predator Avoidance Distance", config.PREDATOR_PREDATOR_AVOID_DISTANCE),
+            ("Predator Smell Distance", config.PREDATOR_SMELL_DISTANCE),
+            ("Predator Reproduction Rate", config.PREDATOR_REPRODUCTION_RATE),
+            ("Predator Health", config.PREDATOR_MAX_FOOD),
+            ("Predator Food Gain per Kill", config.PREDATOR_FOOD_GAIN_PER_KILL),
+            ("Predator Regular Energy Cost", config.PREDATOR_REGULAR_ENERGY_COST),
+            ("Predator Hunting Energy Cost", config.PREDATOR_HUNTING_ENERGY_COST),
+            ("Predator Starvation Border", config.PREDATOR_STARV_BORDER),
+            ("Predator Max Age", config.PREDATOR_MAX_AGE),
+            ("Predator High Age Health", config.PREDATOR_HIGH_AGE_HEALTH),
+            ("", ""),  # Section separator
+            
+            # Prey Settings
+            ("Prey Speed", config.PREY_SPEED),
+            ("Prey Fear Distance", config.PREY_FEAR_DISTANCE),
+            ("Prey Reproduction Rate", config.PREY_REPRODUCTION_RATE),
+            ("Prey Food Gain per Grass", config.PREY_FOOD_GAIN_PER_GRASS),
+            ("Prey Health", config.PREY_MAX_FOOD),
+            ("Prey Starvation Border", config.PREY_STARV_BORDER),
+            ("Prey Regular Energy Cost", config.PREY_REGULAR_ENERGY_COST),
+            ("Prey Flee Energy Cost", config.PREY_FLEE_ENERGY_COST),
+            ("Prey Max Age", config.PREY_MAX_AGE),
+            ("Prey High Age Health", config.PREY_HIGH_AGE_HEALTH),
+            ("", ""),  # Section separator
+            
+            # Environment Settings
+            ("Grass Growth Rate", config.GRASS_GROWTH_RATE),
+            ("Grass max per Field", config.GRASS_MAX_AMOUNT),
+            ("Grass Start Value", config.DEFAULT_GRASS_AMOUNT),
+            ("", ""),  # Section separator
+            
+            # System Settings
+            ("FPS", config.FPS)
+        ])
         
         self.error_fields = {}
         self.scroll_offset = 0
@@ -99,6 +125,9 @@ class SettingsWindow:
                         params_area = pygame.Rect(self.modal_rect.left + 50, self.modal_rect.top + 70, self.modal_rect.width - 100, self.modal_rect.height - 220)
                         keys_list = list(self.settings.keys())
                         for i, key in enumerate(keys_list):
+                            # Skip separator lines when handling clicks
+                            if key == "":
+                                continue
                             line_rect = pygame.Rect(params_area.left, params_area.top + i*30 + self.scroll_offset, params_area.width, 30)
                             if line_rect.collidepoint(event.pos):
                                 self.active_key = key
@@ -126,11 +155,15 @@ class SettingsWindow:
                         self.settings[self.active_key] = self.active_text
                 if event.type == pygame.MOUSEWHEEL:
                     self.scroll_offset += event.y * 20
-            
+
             params_area = pygame.Rect(self.modal_rect.left + 50, self.modal_rect.top + 70, self.modal_rect.width - 100, self.modal_rect.height - 220)
             total_content = len(self.settings) * 30
-            min_scroll = min(0, params_area.height - total_content)
-            self.scroll_offset = max(min_scroll, min(0, self.scroll_offset))
+            # Add padding at both top and bottom for better visual spacing
+            padding_top = 10     # Extra space at the top
+            padding_bottom = 40  # Extra space to keep last line visible
+            min_scroll = min(0, params_area.height - total_content - padding_bottom)
+            max_scroll = padding_top  # Allow scrolling beyond 0 to create top padding
+            self.scroll_offset = max(min_scroll, min(max_scroll, self.scroll_offset))
             
             pygame.draw.rect(self.screen, (240,240,240), self.modal_rect)
             header = self.font.render("Simulation Settings", True, (0,0,0))
@@ -141,7 +174,12 @@ class SettingsWindow:
             keys = list(self.settings.keys())
             for i, key in enumerate(keys):
                 y = params_area.top + i * 30 + self.scroll_offset
-                if y >= params_area.top and y < params_area.bottom:
+                # Ensure there's enough space for the full line height (30px) before the bottom of params_area
+                if y >= params_area.top and y + 30 <= params_area.bottom:
+                    # Skip rendering for section separators (empty lines)
+                    if key == "":
+                        continue
+                        
                     text_val = str(self.settings[key])
                     rect = pygame.Rect(params_area.left, y - 5, params_area.width, 30)
                     if key == self.active_key:
@@ -151,10 +189,12 @@ class SettingsWindow:
                             pygame.draw.rect(self.screen, (180, 180, 250), rect)
                     label = f"{key} (std: {config.default_settings[key]}): {text_val}"
                     text_surface = param_font.render(label, True, (0,0,0))
-                    self.screen.blit(text_surface, (rect.left + 10, rect.top + 5))
+                    # Center text vertically within the rect
+                    text_y = rect.top + (rect.height - text_surface.get_height()) // 2
+                    self.screen.blit(text_surface, (rect.left + 10, text_y))
                     if key == self.active_key:
                         caret_x = rect.left + 10 + param_font.size(label)[0]
-                        caret_y = rect.top + 5
+                        caret_y = text_y
                         caret_height = param_font.get_height()
                         pygame.draw.line(self.screen, (0,0,0), (caret_x, caret_y), (caret_x, caret_y + caret_height), 2)
             
@@ -166,6 +206,9 @@ class SettingsWindow:
             pygame.display.flip()
 
         for key in self.settings:
+            # Skip separator lines in final validation
+            if key == "":
+                continue
             if isinstance(self.settings[key], str):
                 try:
                     num_val = float(self.settings[key])

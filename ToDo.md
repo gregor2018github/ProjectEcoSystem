@@ -1,9 +1,9 @@
 ### Todo
 
 - [ ] Improve the visuals of the settings screen
-  - [ ] center the settings window on the screen
-  - [ ] center the buttons within the settings window
-  - [ ] empty lines between different sections for better readability
+  - [x] center the settings window on the screen
+  - [x] center the buttons within the settings window
+  - [x] empty lines between different sections for better readability
   - [ ] Cursor blink effect
   - [ ] arrow buttons can change the cursor position (left/right)
   - [ ] arrow buttons can change the value of the setting (up/down)
