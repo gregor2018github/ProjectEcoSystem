@@ -73,11 +73,22 @@ class SettingsWindow:
         self.scroll_offset = 0
         self.active_key = None
         self.active_text = ""
+        self.cursor_position = 0  # Position of text cursor within the active text
         self.running_settings = True
         self.action = None
         self.cursor_timer = 0  # For blinking cursor
 
     def run(self):
+        """
+        Main loop for the settings window.
+        
+        NEW FEATURES:
+        - Left/Right Arrow Keys: Move cursor position within the text field
+        - Up/Down Arrow Keys: Increment/decrement the selected setting value
+          (increments by 1 for integers, 0.1 for floating point values)
+        - Home/End Keys: Move cursor to beginning/end of text
+        - Delete Key: Delete character at cursor position
+        """
         clock = pygame.time.Clock()  # For cursor blinking timing
         while self.running_settings:
             mouse_pos_settings = pygame.mouse.get_pos()
@@ -134,12 +145,93 @@ class SettingsWindow:
                             if line_rect.collidepoint(event.pos):
                                 self.active_key = key
                                 self.active_text = str(self.settings[key])
+                                self.cursor_position = len(self.active_text)  # Set cursor to end of text
                                 self.error_fields.pop(key, None)
                                 break
                 if event.type == pygame.KEYDOWN and self.active_key is not None:
                     if event.key == pygame.K_BACKSPACE:
-                        self.active_text = self.active_text[:-1]
-                        self.settings[self.active_key] = self.active_text
+                        if self.cursor_position > 0:
+                            self.active_text = self.active_text[:self.cursor_position-1] + self.active_text[self.cursor_position:]
+                            self.cursor_position -= 1
+                            self.settings[self.active_key] = self.active_text
+                    elif event.key == pygame.K_DELETE:
+                        if self.cursor_position < len(self.active_text):
+                            self.active_text = self.active_text[:self.cursor_position] + self.active_text[self.cursor_position+1:]
+                            self.settings[self.active_key] = self.active_text
+                    elif event.key == pygame.K_LEFT:
+                        # Move cursor left
+                        self.cursor_position = max(0, self.cursor_position - 1)
+                    elif event.key == pygame.K_RIGHT:
+                        # Move cursor right
+                        self.cursor_position = min(len(self.active_text), self.cursor_position + 1)
+                    elif event.key == pygame.K_HOME:
+                        # Move cursor to beginning
+                        self.cursor_position = 0
+                    elif event.key == pygame.K_END:
+                        # Move cursor to end
+                        self.cursor_position = len(self.active_text)
+                    elif event.key == pygame.K_ESCAPE:
+                        # Cancel editing and restore original value
+                        if self.active_key is not None:
+                            original_val = config.default_settings.get(self.active_key, self.settings[self.active_key])
+                            self.settings[self.active_key] = original_val
+                            self.active_key = None
+                            self.active_text = ""
+                            self.cursor_position = 0
+                            self.error_fields.clear()
+                    elif event.key == pygame.K_UP:
+                        # Increase value by 1 (or 0.1 for decimals)
+                        try:
+                            current_val = float(self.active_text) if self.active_text else 0
+                            # Determine increment based on default setting type and current value
+                            default_val = config.default_settings[self.active_key]
+                            if isinstance(default_val, float) or '.' in self.active_text:
+                                increment = 0.1
+                                # For very small values, use smaller increments
+                                if abs(current_val) < 1.0:
+                                    increment = 0.01
+                            else:
+                                increment = 1
+                            new_val = current_val + increment
+                            # Round to appropriate decimal places
+                            if increment == 0.01:
+                                new_val = round(new_val, 3)
+                            elif increment == 0.1:
+                                new_val = round(new_val, 2)
+                            self.active_text = str(new_val)
+                            self.cursor_position = len(self.active_text)
+                            self.settings[self.active_key] = self.active_text
+                            self.error_fields.pop(self.active_key, None)
+                        except ValueError:
+                            pass  # Ignore if current text is not a valid number
+                    elif event.key == pygame.K_DOWN:
+                        # Decrease value by 1 (or 0.1 for decimals)
+                        try:
+                            current_val = float(self.active_text) if self.active_text else 0
+                            # Determine increment based on default setting type and current value
+                            default_val = config.default_settings[self.active_key]
+                            if isinstance(default_val, float) or '.' in self.active_text:
+                                increment = 0.1
+                                # For very small values, use smaller increments
+                                if abs(current_val) < 1.0:
+                                    increment = 0.01
+                            else:
+                                increment = 1
+                            new_val = current_val - increment
+                            # Round to appropriate decimal places
+                            if increment == 0.01:
+                                new_val = round(new_val, 3)
+                            elif increment == 0.1:
+                                new_val = round(new_val, 2)
+                            # Prevent negative values for most settings (but allow negative for some like energy costs)
+                            if "Cost" not in self.active_key and "Rate" not in self.active_key:
+                                new_val = max(0, new_val)
+                            self.active_text = str(new_val)
+                            self.cursor_position = len(self.active_text)
+                            self.settings[self.active_key] = self.active_text
+                            self.error_fields.pop(self.active_key, None)
+                        except ValueError:
+                            pass  # Ignore if current text is not a valid number
                     elif event.key == pygame.K_RETURN:
                         try:
                             val = float(self.active_text)
@@ -149,12 +241,16 @@ class SettingsWindow:
                             self.error_fields.pop(self.active_key, None)
                             self.active_key = None
                             self.active_text = ""
+                            self.cursor_position = 0
+                            self.cursor_position = 0
                         except ValueError:
                             self.error_fields[self.active_key] = True
                     else:
                         if event.unicode in "0123456789.-":
-                            self.active_text += event.unicode
-                        self.settings[self.active_key] = self.active_text
+                            # Insert character at cursor position
+                            self.active_text = self.active_text[:self.cursor_position] + event.unicode + self.active_text[self.cursor_position:]
+                            self.cursor_position += 1
+                            self.settings[self.active_key] = self.active_text
                 if event.type == pygame.MOUSEWHEEL:
                     self.scroll_offset += event.y * 20
 
@@ -198,7 +294,10 @@ class SettingsWindow:
                     text_y = rect.top + (rect.height - text_surface.get_height()) // 2
                     self.screen.blit(text_surface, (rect.left + 10, text_y))
                     if key == self.active_key and (self.cursor_timer // 500) % 2:  # Blink every 500ms
-                        caret_x = rect.left + 10 + param_font.size(label)[0]
+                        # Calculate cursor position within the text
+                        label_prefix = f"{key} (std: {config.default_settings[key]}): "
+                        text_before_cursor = label_prefix + text_val[:self.cursor_position]
+                        caret_x = rect.left + 10 + param_font.size(text_before_cursor)[0]
                         caret_y = text_y
                         caret_height = param_font.get_height()
                         pygame.draw.line(self.screen, (0,0,0), (caret_x, caret_y), (caret_x, caret_y + caret_height), 2)

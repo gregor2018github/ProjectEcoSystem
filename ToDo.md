@@ -1,13 +1,5 @@
 ### Todo
 
-- [ ] Improve the visuals of the settings screen
-  - [x] center the settings window on the screen
-  - [x] center the buttons within the settings window
-  - [x] empty lines between different sections for better readability
-  - [x] Cursor blink effect
-  - [ ] arrow buttons can change the cursor position (left/right)
-  - [ ] arrow buttons can change the value of the setting (up/down)
-  - [x] add side bar indication of scroll position
 - [ ] Add FPS counter
 - [ ] Repair FPS limits, currently settings value is non functional
 - [ ] Add a start screen where you can change settings and launch the simulation
@@ -21,6 +13,14 @@
  
 ### Done ✓
 
+- [x] Improve the visuals of the settings screen
+  - [x] center the settings window on the screen
+  - [x] center the buttons within the settings window
+  - [x] empty lines between different sections for better readability
+  - [x] Cursor blink effect
+  - [x] arrow buttons can change the cursor position (left/right)
+  - [x] arrow buttons can change the value of the setting (up/down)
+  - [x] add side bar indication of scroll position
 - [x] Add more variables to the settings menu
   - [x] Max ages
   - [x] Food consumption levels for different activities
