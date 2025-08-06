@@ -75,8 +75,10 @@ class SettingsWindow:
         self.active_text = ""
         self.running_settings = True
         self.action = None
+        self.cursor_timer = 0  # For blinking cursor
 
     def run(self):
+        clock = pygame.time.Clock()  # For cursor blinking timing
         while self.running_settings:
             mouse_pos_settings = pygame.mouse.get_pos()
             for event in pygame.event.get():
@@ -165,6 +167,9 @@ class SettingsWindow:
             max_scroll = padding_top  # Allow scrolling beyond 0 to create top padding
             self.scroll_offset = max(min_scroll, min(max_scroll, self.scroll_offset))
             
+            # Update cursor timer for blinking effect
+            self.cursor_timer += clock.get_time()
+            
             pygame.draw.rect(self.screen, (240,240,240), self.modal_rect)
             header = self.font.render("Simulation Settings", True, (0,0,0))
             self.screen.blit(header, (self.modal_rect.centerx - header.get_width()//2, self.modal_rect.top + 20))
@@ -192,11 +197,31 @@ class SettingsWindow:
                     # Center text vertically within the rect
                     text_y = rect.top + (rect.height - text_surface.get_height()) // 2
                     self.screen.blit(text_surface, (rect.left + 10, text_y))
-                    if key == self.active_key:
+                    if key == self.active_key and (self.cursor_timer // 500) % 2:  # Blink every 500ms
                         caret_x = rect.left + 10 + param_font.size(label)[0]
                         caret_y = text_y
                         caret_height = param_font.get_height()
                         pygame.draw.line(self.screen, (0,0,0), (caret_x, caret_y), (caret_x, caret_y + caret_height), 2)
+            
+            # Draw scrollbar
+            if total_content > params_area.height:
+                scrollbar_width = 10
+                scrollbar_x = params_area.right - scrollbar_width
+                scrollbar_rect = pygame.Rect(scrollbar_x, params_area.top, scrollbar_width, params_area.height)
+                pygame.draw.rect(self.screen, (150, 150, 150), scrollbar_rect)
+                
+                # Calculate thumb position and size
+                content_ratio = params_area.height / (total_content + padding_bottom)
+                thumb_height = max(20, int(params_area.height * content_ratio))
+                scroll_range = max_scroll - min_scroll
+                if scroll_range > 0:
+                    # when scroll_offset is negative (scrolled down), thumb should be lower
+                    thumb_y = params_area.top + int((max_scroll - self.scroll_offset) / scroll_range * (params_area.height - thumb_height))
+                else:
+                    thumb_y = params_area.top
+                
+                thumb_rect = pygame.Rect(scrollbar_x, thumb_y, scrollbar_width, thumb_height)
+                pygame.draw.rect(self.screen, (100, 100, 100), thumb_rect)
             
             btn_font = pygame.font.Font(None, 24)
             draw_button(self.screen, self.btn_rect_standard, "Restart", btn_font, mouse_pos_settings)
@@ -204,6 +229,7 @@ class SettingsWindow:
             draw_button(self.screen, self.btn_rect_cancel, "Cancel", btn_font, mouse_pos_settings)
             draw_button(self.screen, self.btn_rect_reset, "Reset to std", btn_font, mouse_pos_settings)
             pygame.display.flip()
+            clock.tick(60)  # 60 FPS for smooth cursor blinking
 
         for key in self.settings:
             # Skip separator lines in final validation
