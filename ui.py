@@ -2,20 +2,40 @@
 # Imports
 ################################################
 
+from __future__ import annotations
 import pygame
 import config
 from hover_window import HoverWindow # Import HoverWindow
+from animals import Animal, Predator, Prey
+from grass import Grass
 
 ################################################
 # Button Drawing Functions
 ################################################
 
 # Track the button that was last clicked and when
-button_clicked = None
-button_click_time = 0
+button_clicked: pygame.Rect | None = None
+button_click_time: int = 0
 
-# Helper function to draw nicer buttons
-def draw_button(surface, rect, text, font, mouse_pos):
+def draw_button(
+    surface: pygame.Surface,
+    rect: pygame.Rect,
+    text: str,
+    font: pygame.font.Font,
+    mouse_pos: tuple[int, int]
+) -> None:
+    """Draw a styled button with hover and click effects.
+    
+    Renders a button with rounded corners, hover highlighting, and a
+    brief visual click effect when pressed.
+    
+    Args:
+        surface: The pygame surface to draw on.
+        rect: The rectangle defining the button's position and size.
+        text: The text to display on the button.
+        font: The font to use for the button text.
+        mouse_pos: Current mouse position for hover detection.
+    """
     hover = rect.collidepoint(mouse_pos)
     # Check if this button is currently being clicked to apply visual effect
     button_effect = False
@@ -49,8 +69,15 @@ def draw_button(surface, rect, text, font, mouse_pos):
         text_rect = text_surface.get_rect(center=rect.center)
     surface.blit(text_surface, text_rect)
 
-# Register a button click for visual effect
-def register_button_click(rect):
+def register_button_click(rect: pygame.Rect) -> None:
+    """Register a button click for visual effect tracking.
+    
+    Records the clicked button and timestamp to trigger the visual
+    click effect in subsequent draw calls.
+    
+    Args:
+        rect: The rectangle of the button that was clicked.
+    """
     global button_clicked, button_click_time
     button_clicked = rect
     button_click_time = pygame.time.get_ticks()
@@ -59,9 +86,29 @@ def register_button_click(rect):
 # Main Drawing Function for Simulation
 #################################################
 
-# Updated draw_simulation(): use draw_button for all buttons
-# Add hover_animal, current_mouse_pos, and locked_animal parameters
-def draw_simulation(screen, predators, preys, grass, hover_animal=None, current_mouse_pos=None, locked_animal=None):
+def draw_simulation(
+    screen: pygame.Surface,
+    predators: list[Predator],
+    preys: list[Prey],
+    grass: dict[tuple[int, int], Grass],
+    hover_animal: Animal | None = None,
+    current_mouse_pos: tuple[int, int] | None = None,
+    locked_animal: Animal | None = None
+) -> None:
+    """Draw the complete simulation frame including all visual elements.
+    
+    Renders the grass grid, all animals, statistics overlay, control buttons,
+    and any hover/locked animal information windows.
+    
+    Args:
+        screen: The pygame surface to draw on.
+        predators: List of predator objects to draw.
+        preys: List of prey objects to draw.
+        grass: Dictionary of grass chunks to draw.
+        hover_animal: Animal currently being hovered over, or None.
+        current_mouse_pos: Current mouse position for hover window placement.
+        locked_animal: Animal whose info window is locked/pinned, or None.
+    """
     screen.fill((0, 0, 0))
     for (i, j), g in grass.items(): # Draw the grass grid
         pos = (i * config.CHUNKSIZE, j * config.CHUNKSIZE)

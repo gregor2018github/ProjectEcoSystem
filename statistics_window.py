@@ -2,6 +2,7 @@
 # Imports
 ################################################
 
+from __future__ import annotations
 import pygame
 import config
 from ui import draw_button, register_button_click
@@ -11,7 +12,25 @@ from ui import draw_button, register_button_click
 ################################################
 
 class StatisticsWindow:
-    def __init__(self):
+    """A window displaying simulation statistics as line charts.
+    
+    Shows population trends (prey, predator, grass) and event history
+    (births, deaths) over time using line charts.
+    
+    Attributes:
+        stat_screen: The pygame display surface for the statistics window.
+        font: The font used for rendering text.
+        running_stats: Whether the statistics window is currently active.
+        margin: Margin size in pixels around chart elements.
+        chart_width: Width of the chart area in pixels.
+        chart_height: Height of each chart in pixels.
+        pop_chart_rect: Rectangle defining the population chart area.
+        event_chart_rect: Rectangle defining the events chart area.
+        close_rect: Rectangle defining the close button area.
+    """
+    
+    def __init__(self) -> None:
+        """Initialize the statistics window with charts and UI elements."""
         self.stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
         pygame.display.set_caption("Statistics")
         self.font = pygame.font.Font(None, 20)
@@ -24,8 +43,26 @@ class StatisticsWindow:
         self.event_chart_rect = pygame.Rect(self.margin, self.margin + self.chart_height + self.margin, self.chart_width, self.chart_height)
         self.close_rect = pygame.Rect((config.XLIM - config.BUTTON_WIDTH) // 2, config.YLIM - self.margin - config.BUTTON_HEIGHT + 10, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
 
-    def run(self):
-        def draw_line_chart(surface, rect, series, color):
+    def run(self) -> None:
+        """Run the statistics window event loop.
+        
+        Displays population and event charts, handles user input,
+        and closes when the user presses Escape or clicks the Close button.
+        """
+        def draw_line_chart(
+            surface: pygame.Surface,
+            rect: pygame.Rect,
+            series: list[int | float],
+            color: tuple[int, int, int]
+        ) -> None:
+            """Draw a line chart on the given surface.
+            
+            Args:
+                surface: The pygame surface to draw on.
+                rect: The rectangle defining the chart area.
+                series: List of numeric values to plot.
+                color: RGB tuple for the line color.
+            """
             if len(series) < 2:
                 return
             # Scale series within chart rect

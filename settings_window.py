@@ -2,6 +2,7 @@
 # Imports
 ###############################################
 
+from __future__ import annotations
 import pygame
 import config
 from ui import draw_button, register_button_click
@@ -12,7 +13,37 @@ from collections import OrderedDict
 ###############################################
 
 class SettingsWindow:
-    def __init__(self, screen):
+    """A modal window for viewing and editing simulation settings.
+    
+    Provides a scrollable list of all configurable simulation parameters
+    with inline editing, value increment/decrement controls, and options
+    to restart, resume, cancel, or reset to defaults.
+    
+    Attributes:
+        screen: The pygame display surface.
+        modal_rect: Rectangle defining the modal window bounds.
+        font: Font for header text.
+        btn_rect_standard: Rectangle for the Restart button.
+        btn_rect_resume: Rectangle for the Resume button.
+        btn_rect_cancel: Rectangle for the Cancel button.
+        btn_rect_reset: Rectangle for the Reset to Default button.
+        settings: OrderedDict of setting names to current values.
+        error_fields: Dict tracking fields with invalid input.
+        scroll_offset: Current vertical scroll position.
+        active_key: Currently selected setting key for editing.
+        active_text: Current text value being edited.
+        cursor_position: Cursor position within active text.
+        running_settings: Whether the settings window is active.
+        action: The action taken when closing ('restart', 'resume', 'cancel').
+        cursor_timer: Timer for cursor blink animation.
+    """
+    
+    def __init__(self, screen: pygame.Surface) -> None:
+        """Initialize the settings window.
+        
+        Args:
+            screen: The pygame display surface to render on.
+        """
         self.screen = screen
         # Center the modal window on the screen
         screen_width, screen_height = screen.get_size()
@@ -90,16 +121,24 @@ class SettingsWindow:
 # Settings Window Main Loop
 ################################################
 
-    def run(self):
-        """
-        Main loop for the settings window.
+    def run(self) -> tuple[str | None, OrderedDict[str, int | float | str]]:
+        """Run the settings window event loop.
         
-        NEW FEATURES:
+        Displays all simulation settings with inline editing capabilities.
+        Supports the following keyboard controls:
         - Left/Right Arrow Keys: Move cursor position within the text field
         - Up/Down Arrow Keys: Increment/decrement the selected setting value
           (increments by 1 for integers, 0.1 for floating point values)
         - Home/End Keys: Move cursor to beginning/end of text
         - Delete Key: Delete character at cursor position
+        - Backspace: Delete character before cursor
+        - Enter: Confirm the current value
+        - Escape: Cancel editing and restore original value
+        
+        Returns:
+            A tuple containing:
+                - action: The action taken ('restart', 'resume', 'cancel', or None)
+                - settings: OrderedDict of all settings with their final values
         """
         clock = pygame.time.Clock()  # For cursor blinking timing
         while self.running_settings:

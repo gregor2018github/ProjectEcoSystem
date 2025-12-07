@@ -2,9 +2,10 @@
 # Imports
 ###############################################
 
+from __future__ import annotations
 import pygame
 import config                        # CONSTANTS
-from animals import Predator, Prey   # Animal classes
+from animals import Predator, Prey, Animal   # Animal classes
 from grass import Grass              # Grass class
 from simulation import setup_simulation, update_simulation              # Simulation functions
 from ui import draw_simulation       # UI function
@@ -14,7 +15,13 @@ from event_handler import process_event, initialize_sounds  # Event handling fun
 # Main
 ############################################### 
 
-def main():
+def main() -> None:
+    """Main entry point for the ecosystem simulation.
+    
+    Initializes pygame, sets up the simulation, and runs the main game loop.
+    Handles events, updates simulation state when not paused, and renders
+    each frame.
+    """
     pygame.init()
     initialize_sounds()
 

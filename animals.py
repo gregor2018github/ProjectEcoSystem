@@ -3,39 +3,76 @@
 # Imports
 ###############################################
 
+from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 import pygame
 import random
 import config
+
+if TYPE_CHECKING:
+    from grass import Grass
 
 ###############################################
 # General animal class definition
 ###############################################
 
 class Animal(ABC):
-    def __init__(self, x, y):
+    """Abstract base class representing an animal in the ecosystem.
+    
+    Attributes:
+        x: The x-coordinate of the animal's position.
+        y: The y-coordinate of the animal's position.
+        alive: Whether the animal is alive.
+        starving: Whether the animal is currently starving.
+        killed: Whether the animal killed another animal this round.
+        age: The age of the animal in simulation ticks.
+        cur_consumption: The current energy consumption rate.
+    """
+    
+    SIZE: int  # Must be defined in subclasses
+    
+    def __init__(self, x: float, y: float) -> None:
+        """Initialize an animal at the given position.
+        
+        Args:
+            x: The initial x-coordinate.
+            y: The initial y-coordinate.
+        """
         self.x = x
         self.y = y
         self.alive = True
         self.starving = False  # attribute to track starvation
         self.killed = False  # attribute to track kill events
         self.age = 0
-        self.cur_consumption = 0  
+        self.cur_consumption = 0.0  
 
-    def get_rect(self):
-        # SIZE must be defined in subclasses
+    def get_rect(self) -> pygame.Rect:
+        """Get the bounding rectangle for this animal.
+        
+        Returns:
+            A pygame.Rect representing the animal's bounding box.
+        """
         return pygame.Rect(self.x - self.SIZE, self.y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
 
     @abstractmethod
-    def get_status(self):
-        """Returns a string describing the animal's current status."""
+    def get_status(self) -> str:
+        """Get a string describing the animal's current status.
+        
+        Returns:
+            A string describing the current status (e.g., 'Hunting', 'Fleeing', 'Idle').
+        """
         pass
 
-    def consumed_all_energy(self):
-        """
-        Check if the animal has consumed all its energy, returns true in case.
-        If the animal is not dead, check if it is starving. 
-        Consider the animal type (Predator or Prey) and its state (hunting or not). 
+    def consumed_all_energy(self) -> bool:
+        """Check if the animal has consumed all its energy.
+        
+        Calculates energy consumption based on the animal type (Predator or Prey)
+        and its current state (hunting/fleeing or not). Updates the starving flag
+        if the animal's food level falls below the starvation threshold.
+        
+        Returns:
+            True if the animal has run out of energy and should die, False otherwise.
         """
         if isinstance(self, Predator):
             # Predator energy consumption logic
@@ -70,11 +107,22 @@ class Animal(ABC):
         return False  # Mark as alive if food is not depleted
 
     @abstractmethod
-    def update(self, animals, grass):
+    def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
+        """Update the animal's state for one simulation tick.
+        
+        Args:
+            animals: List of all animals in the simulation.
+            grass: Dictionary mapping chunk coordinates to Grass objects.
+        """
         pass
 
     @abstractmethod
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
+        """Draw the animal on the screen.
+        
+        Args:
+            screen: The pygame surface to draw on.
+        """
         pass
 
 ###############################################
@@ -82,17 +130,40 @@ class Animal(ABC):
 ###############################################
 
 class Predator(Animal):
-    COLOR = (255, 0, 0)  # Red
-    SIZE = 5
+    """A predator animal that hunts prey in the ecosystem.
+    
+    Attributes:
+        COLOR: The color used to draw the predator (red).
+        SIZE: The radius of the predator in pixels.
+        food: Current food/energy level.
+        hunting: Whether the predator is currently hunting.
+        avoiding_predator_flag: Whether the predator is avoiding other predators.
+        prey_eaten: Total number of prey eaten by this predator.
+    """
+    
+    COLOR: tuple[int, int, int] = (255, 0, 0)  # Red
+    SIZE: int = 5
 
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float) -> None:
+        """Initialize a predator at the given position.
+        
+        Args:
+            x: The initial x-coordinate.
+            y: The initial y-coordinate.
+        """
         super().__init__(x, y)
         self.food = config.PREDATOR_MAX_FOOD  # Initialize predator food
         self.hunting = False  # attribute to track hunting state
         self.avoiding_predator_flag = False # For status display
         self.prey_eaten = 0
 
-    def get_status(self):
+    def get_status(self) -> str:
+        """Get a string describing the predator's current status.
+        
+        Returns:
+            A string indicating the predator's state: 'Deceased', 'Hunting',
+            'Avoiding Predator', 'Starving', or 'Idle'.
+        """
         if not self.alive:
             return "Deceased"
         if self.hunting:
@@ -103,10 +174,25 @@ class Predator(Animal):
             return "Starving"
         return "Idle"
     
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
+        """Draw the predator as a red circle on the screen.
+        
+        Args:
+            screen: The pygame surface to draw on.
+        """
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
     
-    def update(self, animals, grass):
+    def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
+        """Update the predator's state for one simulation tick.
+        
+        Handles aging, energy consumption, predator avoidance, hunting behavior,
+        and random movement. The predator will hunt prey when hungry, avoid
+        other predators when not starving, and move randomly when idle.
+        
+        Args:
+            animals: List of all animals in the simulation.
+            grass: Dictionary mapping chunk coordinates to Grass objects (unused by predators).
+        """
         self.killed = False # means it killed something this round
         self.avoiding_predator_flag = False # Reset at the start of each update cycle
         target = None
@@ -198,17 +284,40 @@ class Predator(Animal):
 ###############################################
 
 class Prey(Animal):
-    COLOR = (255, 255, 255)  # Blue
-    SIZE = 3
+    """A prey animal that eats grass and flees from predators.
+    
+    Attributes:
+        COLOR: The color used to draw the prey (white).
+        SIZE: The radius of the prey in pixels.
+        food: Current food/energy level.
+        is_fleeing: Whether the prey is currently fleeing from a predator.
+        is_eating: Whether the prey is currently eating grass.
+        grass_eaten: Total amount of grass eaten by this prey.
+    """
+    
+    COLOR: tuple[int, int, int] = (255, 255, 255)  # White
+    SIZE: int = 3
 
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float) -> None:
+        """Initialize a prey animal at the given position.
+        
+        Args:
+            x: The initial x-coordinate.
+            y: The initial y-coordinate.
+        """
         super().__init__(x, y)
         self.food = config.PREY_MAX_FOOD  # Initialize prey food
         self.is_fleeing = False
         self.is_eating = False
         self.grass_eaten = 0
     
-    def get_status(self):
+    def get_status(self) -> str:
+        """Get a string describing the prey's current status.
+        
+        Returns:
+            A string indicating the prey's state: 'Deceased', 'Fleeing',
+            'Eating Grass', 'Starving', or 'Idle'.
+        """
         if not self.alive:
             return "Deceased"
         if self.is_fleeing:
@@ -219,10 +328,24 @@ class Prey(Animal):
             return "Starving"
         return "Idle"
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
+        """Draw the prey as a white circle on the screen.
+        
+        Args:
+            screen: The pygame surface to draw on.
+        """
         pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
   
-    def update(self, animals, grass):
+    def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
+        """Update the prey's state for one simulation tick.
+        
+        Handles aging, fleeing from predators, energy consumption, movement
+        towards areas with more grass, and eating grass to gain energy.
+        
+        Args:
+            animals: List of all animals in the simulation.
+            grass: Dictionary mapping chunk coordinates to Grass objects.
+        """
         # Reset status flags at the beginning of each update
         self.is_fleeing = False
         self.is_eating = False

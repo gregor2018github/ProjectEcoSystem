@@ -2,11 +2,13 @@
 # Imports
 ################################################
 
+from __future__ import annotations
 import pygame
 import random
 import config
 import os
-from animals import Predator, Prey
+from animals import Predator, Prey, Animal
+from grass import Grass
 from simulation import setup_simulation
 from ui import register_button_click
 from settings_window import SettingsWindow
@@ -17,9 +19,14 @@ from statistics_window import StatisticsWindow
 ################################################
 
 # Initialize click sound
-click_sound = None
+click_sound: pygame.mixer.Sound | None = None
 
-def initialize_sounds():
+def initialize_sounds() -> None:
+    """Initialize the sound system and load click sound.
+    
+    Loads the click sound file from the assets folder if button click
+    sounds are enabled in the configuration.
+    """
     global click_sound
     if config.BUTTON_CLICK_SOUND_ENABLED:
         pygame.mixer.init()
@@ -28,7 +35,8 @@ def initialize_sounds():
         sound_file_path = os.path.join(current_directory, "assets", "click.mp3")
         click_sound = pygame.mixer.Sound(sound_file_path)
 
-def play_click_sound():
+def play_click_sound() -> None:
+    """Play the button click sound effect if enabled and loaded."""
     if config.BUTTON_CLICK_SOUND_ENABLED and click_sound:
         pygame.mixer.Sound.play(click_sound)
 
@@ -36,7 +44,46 @@ def play_click_sound():
 # Event processing function
 ################################################
 
-def process_event(event, predators, preys, grass, screen, running, stopped, hover_animal, locked_animal, all_animals_for_hover):
+def process_event(
+    event: pygame.event.Event,
+    predators: list[Predator],
+    preys: list[Prey],
+    grass: dict[tuple[int, int], Grass],
+    screen: pygame.Surface,
+    running: bool,
+    stopped: bool,
+    hover_animal: Animal | None,
+    locked_animal: Animal | None,
+    all_animals_for_hover: list[Animal]
+) -> tuple[bool, bool, list[Predator], list[Prey], dict[tuple[int, int], Grass], bool, Animal | None, Animal | None]:
+    """Process a single pygame event and update simulation state.
+    
+    Handles quit events, keyboard input (space to pause), mouse motion for
+    hovering over animals, and mouse clicks for buttons and animal selection.
+    
+    Args:
+        event: The pygame event to process.
+        predators: List of predator objects.
+        preys: List of prey objects.
+        grass: Dictionary of grass chunks.
+        screen: The pygame display surface.
+        running: Whether the simulation is running.
+        stopped: Whether the simulation is paused.
+        hover_animal: Currently hovered animal, or None.
+        locked_animal: Currently locked/selected animal, or None.
+        all_animals_for_hover: Combined list of all animals for hover detection.
+    
+    Returns:
+        A tuple containing:
+            - running: Updated running state
+            - stopped: Updated paused state
+            - predators: Updated predators list
+            - preys: Updated preys list
+            - grass: Updated grass dictionary
+            - event_handled_by_button: Whether a button consumed the event
+            - hover_animal: Updated hover animal
+            - locked_animal: Updated locked animal
+    """
     event_handled_by_button = False # Initialize flag
     original_event_type = event.type # Store original event type
 

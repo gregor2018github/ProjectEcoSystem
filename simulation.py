@@ -2,6 +2,7 @@
 # Imports
 ################################################
 
+from __future__ import annotations
 import random
 import config
 from animals import Predator, Prey
@@ -11,11 +12,22 @@ from grass import Grass
 # Simulation Setup and Update Functions
 ################################################
 
-def setup_simulation():
+def setup_simulation() -> tuple[list[Predator], list[Prey], dict[tuple[int, int], Grass]]:
+    """Initialize the simulation with predators, prey, and grass.
+    
+    Creates the initial population of predators and prey at random positions
+    within the simulation boundaries, and initializes the grass grid.
+    
+    Returns:
+        A tuple containing:
+            - List of Predator objects
+            - List of Prey objects
+            - Dictionary mapping (col, row) tuples to Grass objects
+    """
     predators = [Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREDATORS)]
     preys = [Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREYS)]
     # Initialize grass chunks
-    grass = {}
+    grass: dict[tuple[int, int], Grass] = {}
     cols = config.XLIM // config.CHUNKSIZE
     rows = config.YLIM // config.CHUNKSIZE
     for i in range(cols):
@@ -23,7 +35,21 @@ def setup_simulation():
             grass[(i, j)] = Grass()
     return predators, preys, grass
 
-def update_simulation(predators, preys, grass):
+def update_simulation(
+    predators: list[Predator],
+    preys: list[Prey],
+    grass: dict[tuple[int, int], Grass]
+) -> None:
+    """Advance the simulation by one tick.
+    
+    Updates all animals and grass, removes dead animals, handles reproduction,
+    and records statistics history.
+    
+    Args:
+        predators: List of predator objects to update (modified in place).
+        preys: List of prey objects to update (modified in place).
+        grass: Dictionary of grass chunks to update.
+    """
     # Combine predators and preys into a single list for interaction checks
     all_animals = predators + preys 
 

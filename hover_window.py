@@ -2,16 +2,42 @@
 # Imports
 ################################################
 
+from __future__ import annotations
 import pygame
 import config
-from animals import Predator, Prey # Import specific animal classes for isinstance checks
+from animals import Animal, Predator, Prey # Import specific animal classes for isinstance checks
 
 ################################################
 # Hover Window Class
 ################################################
 
 class HoverWindow:
-    def __init__(self, animal, anchor_pos): # Changed mouse_pos to anchor_pos
+    """A popup window displaying detailed information about an animal.
+    
+    Shows animal type, age, food level, status, and other relevant
+    statistics in a semi-transparent overlay near the animal or cursor.
+    
+    Attributes:
+        animal: The animal whose information is displayed.
+        anchor_pos: The position to anchor the window near.
+        font: The font used for rendering text.
+        padding: Padding around text content in pixels.
+        line_height: Height of each text line in pixels.
+        window_color: RGBA color tuple for the background.
+        text_color: RGB color tuple for the text.
+        lines: List of text lines to display.
+        width: Calculated window width.
+        height: Calculated window height.
+        rect: The rectangle defining the window's position and size.
+    """
+    
+    def __init__(self, animal: Animal, anchor_pos: tuple[float, float]) -> None:
+        """Initialize the hover window for the given animal.
+        
+        Args:
+            animal: The animal to display information about.
+            anchor_pos: The (x, y) position to anchor the window near.
+        """
         self.animal = animal
         self.anchor_pos = anchor_pos # Store the anchor position
         self.font = pygame.font.Font(None, 20) # Small font for the hover info
@@ -71,7 +97,15 @@ class HoverWindow:
         
         self.rect = pygame.Rect(x, y, self.width, self.height)
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
+        """Draw the hover window on the screen.
+        
+        Renders a semi-transparent background with the animal's
+        information text overlaid.
+        
+        Args:
+            screen: The pygame surface to draw on.
+        """
         # Create a surface with per-pixel alpha for transparency
         temp_surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         temp_surface.fill(self.window_color) # Apply background color with alpha
