@@ -48,12 +48,24 @@ class Animal(ABC):
         self.cur_consumption = 0.0  
 
     def get_rect(self) -> pygame.Rect:
-        """Get the bounding rectangle for this animal.
+        """Get the bounding rectangle for this animal in world coordinates.
         
         Returns:
-            A pygame.Rect representing the animal's bounding box.
+            A pygame.Rect representing the animal's bounding box in world coordinates.
         """
         return pygame.Rect(self.x - self.SIZE, self.y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
+
+    def get_screen_rect(self) -> pygame.Rect:
+        """Get the bounding rectangle for this animal in screen coordinates.
+        
+        Accounts for the camera offset to return the position as it appears on screen.
+        
+        Returns:
+            A pygame.Rect representing the animal's bounding box in screen coordinates.
+        """
+        screen_x = self.x - config.camera_x
+        screen_y = self.y - config.camera_y
+        return pygame.Rect(screen_x - self.SIZE, screen_y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
 
     @abstractmethod
     def get_status(self) -> str:
@@ -180,7 +192,12 @@ class Predator(Animal):
         Args:
             screen: The pygame surface to draw on.
         """
-        pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
+        # Apply camera offset for drawing
+        screen_x = int(self.x - config.camera_x)
+        screen_y = int(self.y - config.camera_y)
+        # Only draw if visible on screen
+        if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
+            pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
     
     def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
         """Update the predator's state for one simulation tick.
@@ -275,9 +292,9 @@ class Predator(Animal):
                 self.x += random.uniform(-1, 1)
                 self.y += random.uniform(-1, 1)
 
-        # Boundary checks
-        self.x = max(0, min(config.XLIM, self.x))
-        self.y = max(0, min(config.YLIM, self.y))
+        # Boundary checks (use world size, not screen size)
+        self.x = max(0, min(config.WORLD_WIDTH, self.x))
+        self.y = max(0, min(config.WORLD_HEIGHT, self.y))
 
 ###############################################
 # Prey 
@@ -334,7 +351,12 @@ class Prey(Animal):
         Args:
             screen: The pygame surface to draw on.
         """
-        pygame.draw.circle(screen, self.COLOR, (int(self.x), int(self.y)), self.SIZE)
+        # Apply camera offset for drawing
+        screen_x = int(self.x - config.camera_x)
+        screen_y = int(self.y - config.camera_y)
+        # Only draw if visible on screen
+        if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
+            pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
   
     def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
         """Update the prey's state for one simulation tick.
@@ -406,8 +428,9 @@ class Prey(Animal):
                 self.x += (grass_dx / norm) * (config.PREY_SPEED * 0.5)
                 self.y += (grass_dy / norm) * (config.PREY_SPEED * 0.5)
         
-        self.x = max(0, min(config.XLIM, self.x))
-        self.y = max(0, min(config.YLIM, self.y))
+        # Boundary checks (use world size, not screen size)
+        self.x = max(0, min(config.WORLD_WIDTH, self.x))
+        self.y = max(0, min(config.WORLD_HEIGHT, self.y))
         # Consume grass and gain food based on current patch
         if chunk in grass:
             gain = grass[chunk].amount * config.PREY_FOOD_GAIN_PER_GRASS

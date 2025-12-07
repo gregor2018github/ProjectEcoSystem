@@ -98,9 +98,10 @@ def process_event(
 
     if event.type == pygame.MOUSEMOTION:
         # We use event.pos for MOUSEMOTION as it's the most current for this specific event.
+        # Use get_screen_rect() to check collision with screen-space mouse position
         current_hover = None # Temporary variable for this event processing
         for animal in reversed(all_animals_for_hover): 
-            if animal.alive and animal.get_rect().collidepoint(event.pos): # MOUSEMOTION uses event.pos
+            if animal.alive and animal.get_screen_rect().collidepoint(event.pos):
                 current_hover = animal
                 break # Found an animal, stop checking
         hover_animal = current_hover # Update the actual hover_animal state
@@ -181,12 +182,18 @@ def process_event(
         elif add_pred_button_rect.collidepoint(mouse_pos):
             register_button_click(add_pred_button_rect)
             play_click_sound()
-            predators.append(Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)))
+            # Spawn new predator in the visible area (screen + camera offset)
+            spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM)
+            spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM)
+            predators.append(Predator(spawn_x, spawn_y))
             event_handled_by_button = True
         elif add_prey_button_rect.collidepoint(mouse_pos):
             register_button_click(add_prey_button_rect)
             play_click_sound()
-            preys.append(Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)))
+            # Spawn new prey in the visible area (screen + camera offset)
+            spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM)
+            spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM)
+            preys.append(Prey(spawn_x, spawn_y))
             event_handled_by_button = True
         elif stats_button_rect.collidepoint(mouse_pos):
             register_button_click(stats_button_rect)
@@ -201,8 +208,9 @@ def process_event(
         if not event_handled_by_button: # Only process if no button was clicked
             clicked_on_animal_this_click = False
             # MOUSEBUTTONDOWN uses event.pos for click location
+            # Use get_screen_rect() to check collision with screen-space mouse position
             for animal_check in all_animals_for_hover: 
-                if animal_check.alive and animal_check.get_rect().collidepoint(event.pos):
+                if animal_check.alive and animal_check.get_screen_rect().collidepoint(event.pos):
                     locked_animal = animal_check # Lock on this animal
                     clicked_on_animal_this_click = True
                     break 

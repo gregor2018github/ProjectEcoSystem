@@ -110,9 +110,17 @@ def draw_simulation(
         locked_animal: Animal whose info window is locked/pinned, or None.
     """
     screen.fill((0, 0, 0))
-    for (i, j), g in grass.items(): # Draw the grass grid
-        pos = (i * config.CHUNKSIZE, j * config.CHUNKSIZE)
-        g.draw(screen, pos, config.CHUNKSIZE)
+    # Draw the grass grid with camera offset
+    for (i, j), g in grass.items():
+        # Calculate world position
+        world_x = i * config.CHUNKSIZE
+        world_y = j * config.CHUNKSIZE
+        # Apply camera offset
+        screen_x = world_x - int(config.camera_x)
+        screen_y = world_y - int(config.camera_y)
+        # Only draw if visible on screen
+        if -config.CHUNKSIZE <= screen_x <= config.XLIM and -config.CHUNKSIZE <= screen_y <= config.YLIM:
+            g.draw(screen, (screen_x, screen_y), config.CHUNKSIZE)
     for p in preys: # Draw the prey
         p.draw(screen)
     for p in predators: # Draw the predators
@@ -185,8 +193,8 @@ def draw_simulation(
     
     # Draw locked animal's info window if one is selected and alive
     if locked_animal and locked_animal.alive:
-        # Anchor position for locked window is the animal's current position
-        locked_anchor_pos = (locked_animal.x, locked_animal.y)
+        # Anchor position for locked window is the animal's screen position (with camera offset)
+        locked_anchor_pos = (locked_animal.x - config.camera_x, locked_animal.y - config.camera_y)
         hw_locked = HoverWindow(locked_animal, locked_anchor_pos)
         hw_locked.draw(screen)
     

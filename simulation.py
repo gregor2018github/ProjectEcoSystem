@@ -24,12 +24,12 @@ def setup_simulation() -> tuple[list[Predator], list[Prey], dict[tuple[int, int]
             - List of Prey objects
             - Dictionary mapping (col, row) tuples to Grass objects
     """
-    predators = [Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREDATORS)]
-    preys = [Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREYS)]
+    predators = [Predator(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREDATORS)]
+    preys = [Prey(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREYS)]
     # Initialize grass chunks
     grass: dict[tuple[int, int], Grass] = {}
-    cols = config.XLIM // config.CHUNKSIZE
-    rows = config.YLIM // config.CHUNKSIZE
+    cols = config.WORLD_WIDTH // config.CHUNKSIZE
+    rows = config.WORLD_HEIGHT // config.CHUNKSIZE
     for i in range(cols):
         for j in range(rows):
             grass[(i, j)] = Grass()

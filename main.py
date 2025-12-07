@@ -20,7 +20,7 @@ def main() -> None:
     
     Initializes pygame, sets up the simulation, and runs the main game loop.
     Handles events, updates simulation state when not paused, and renders
-    each frame.
+    each frame. Supports camera movement with WASD and arrow keys.
     """
     pygame.init()
     initialize_sounds()
@@ -33,6 +33,14 @@ def main() -> None:
         screen_height = info.current_h
         config.XLIM = screen_width
         config.YLIM = screen_height
+    
+    # Calculate world size based on screen size (2x width and 2x height = 4x area)
+    config.WORLD_WIDTH = config.XLIM * config.WORLD_SIZE_MULTIPLIER
+    config.WORLD_HEIGHT = config.YLIM * config.WORLD_SIZE_MULTIPLIER
+    
+    # Initialize camera position (start at top-left)
+    config.camera_x = 0.0
+    config.camera_y = 0.0
 
     screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     clock = pygame.time.Clock()
@@ -47,6 +55,17 @@ def main() -> None:
     while running:
         current_mouse_pos = pygame.mouse.get_pos() # Get current mouse position once per frame
         all_animals_for_hover = predators + preys # Update animal list each frame for hover/click checks
+        
+        # Handle continuous key presses for camera movement
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            config.camera_y = max(0, config.camera_y - config.CAMERA_SPEED)
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            config.camera_y = min(config.WORLD_HEIGHT - config.YLIM, config.camera_y + config.CAMERA_SPEED)
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            config.camera_x = max(0, config.camera_x - config.CAMERA_SPEED)
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            config.camera_x = min(config.WORLD_WIDTH - config.XLIM, config.camera_x + config.CAMERA_SPEED)
 
         for event in pygame.event.get():
             # Pass event to handler, which might consume it (e.g., button click)

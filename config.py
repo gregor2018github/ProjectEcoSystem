@@ -3,8 +3,19 @@
 ################################################
 
 LOCKED_SCREEN_SIZE = False  # If True, screen size is fixed to default values. If False, screen size is set to user's display size.
-XLIM = 1540
-YLIM = 850
+XLIM = 1540  # Screen width (viewport)
+YLIM = 850   # Screen height (viewport)
+
+# World size multiplier (world is this many times larger than screen)
+WORLD_SIZE_MULTIPLIER = 1  # 2x width and 2x height = 4x total area
+WORLD_WIDTH = XLIM * WORLD_SIZE_MULTIPLIER   # Will be recalculated after screen size is set
+WORLD_HEIGHT = YLIM * WORLD_SIZE_MULTIPLIER  # Will be recalculated after screen size is set
+
+# Camera/viewport offset (top-left corner of visible area in world coordinates)
+camera_x = 0.0
+camera_y = 0.0
+CAMERA_SPEED = 15  # Pixels per frame when moving camera
+
 NUM_PREDATORS = 5
 NUM_PREYS = 55
 CHUNKSIZE = 10  # 10x10 pixels
