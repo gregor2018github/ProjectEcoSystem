@@ -7,7 +7,7 @@ XLIM = 1540  # Screen width (viewport)
 YLIM = 850   # Screen height (viewport)
 
 # World size multiplier (world is this many times larger than screen)
-WORLD_SIZE_MULTIPLIER = 1  # 2x width and 2x height = 4x total area
+WORLD_SIZE_MULTIPLIER = 2  # 2x width and 2x height = 4x total area
 WORLD_WIDTH = XLIM * WORLD_SIZE_MULTIPLIER   # Will be recalculated after screen size is set
 WORLD_HEIGHT = YLIM * WORLD_SIZE_MULTIPLIER  # Will be recalculated after screen size is set
 

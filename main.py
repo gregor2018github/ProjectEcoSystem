@@ -6,11 +6,9 @@ from __future__ import annotations
 import pygame
 import config                        # CONSTANTS
 from animals import Predator, Prey, Animal   # Animal classes
-from grass import Grass              # Grass class
 from simulation import setup_simulation, update_simulation              # Simulation functions
 from ui import draw_simulation       # UI function
 from event_handler import process_event, initialize_sounds  # Event handling function
-from grass import init_grass_color_lut  # Grass color initialization
 
 ###############################################
 # Main
@@ -25,7 +23,6 @@ def main() -> None:
     """
     pygame.init()
     initialize_sounds()
-    init_grass_color_lut()  # Initialize grass color lookup table for fast rendering
 
     # set the size of the game field, either by locked values or by display size
     if not config.LOCKED_SCREEN_SIZE:

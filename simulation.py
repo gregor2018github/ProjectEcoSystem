@@ -6,13 +6,13 @@ from __future__ import annotations
 import random
 import config
 from animals import Predator, Prey
-from grass import Grass
+from grass_array import GrassArray
 
 ################################################
 # Simulation Setup and Update Functions
 ################################################
 
-def setup_simulation() -> tuple[list[Predator], list[Prey], dict[tuple[int, int], Grass]]:
+def setup_simulation() -> tuple[list[Predator], list[Prey], GrassArray]:
     """Initialize the simulation with predators, prey, and grass.
     
     Creates the initial population of predators and prey at random positions
@@ -22,27 +22,25 @@ def setup_simulation() -> tuple[list[Predator], list[Prey], dict[tuple[int, int]
         A tuple containing:
             - List of Predator objects
             - List of Prey objects
-            - Dictionary mapping (col, row) tuples to Grass objects
+            - GrassArray for efficient grass management
     """
     predators = [Predator(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREDATORS)]
     preys = [Prey(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREYS)]
-    # Initialize grass chunks
-    grass: dict[tuple[int, int], Grass] = {}
+    
+    # Initialize grass array (much faster than dict of objects)
     cols = config.WORLD_WIDTH // config.CHUNKSIZE
     rows = config.WORLD_HEIGHT // config.CHUNKSIZE
-    for i in range(cols):
-        for j in range(rows):
-            grass[(i, j)] = Grass()
+    grass = GrassArray(cols, rows)
     
     # Initialize total grass tracking
-    config.total_grass = len(grass) * config.DEFAULT_GRASS_AMOUNT
+    config.total_grass = grass.get_total()
     
     return predators, preys, grass
 
 def update_simulation(
     predators: list[Predator],
     preys: list[Prey],
-    grass: dict[tuple[int, int], Grass]
+    grass: GrassArray
 ) -> None:
     """Advance the simulation by one tick.
     
@@ -52,7 +50,7 @@ def update_simulation(
     Args:
         predators: List of predator objects to update (modified in place).
         preys: List of prey objects to update (modified in place).
-        grass: Dictionary of grass chunks to update.
+        grass: GrassArray for grass management.
     """
     # Combine predators and preys into a single list for interaction checks
     all_animals = predators + preys 
@@ -96,14 +94,9 @@ def update_simulation(
     # Increment simulation round
     config.rounds_passed += 1
 
-    # Update grass and track total incrementally
-    # Calculate growth added this tick (capped chunks don't grow)
-    grass_growth_this_tick = 0.0
-    for g in grass.values():
-        old_amount = g.amount
-        g.update()
-        grass_growth_this_tick += g.amount - old_amount
-    config.total_grass += grass_growth_this_tick
+    # Update all grass in one vectorized operation (MUCH faster than individual updates)
+    grass_growth = grass.update()
+    config.total_grass += grass_growth
 
     # Update stats history (using the updated separate lists)
     config.stats_history["Prey Count"].append(len(preys))

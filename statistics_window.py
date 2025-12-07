@@ -66,8 +66,8 @@ class StatisticsWindow:
             if len(series) < 2:
                 return
             # Scale series within chart rect
-            min_val = min(series)
-            max_val = max(series)
+            min_val = float(min(series))
+            max_val = float(max(series))
             if max_val == min_val:
                 max_val += 1
             points = []
@@ -75,9 +75,11 @@ class StatisticsWindow:
             step = rect.width / (n - 1)
             for i, val in enumerate(series):
                 # Map value to y coordinate (invert as y increases downwards)
-                y = rect.bottom - ((val - min_val) / (max_val - min_val)) * rect.height
+                # Convert to float to handle NumPy types
+                val_f = float(val)
+                y = rect.bottom - ((val_f - min_val) / (max_val - min_val)) * rect.height
                 x = rect.left + i * step
-                points.append((x, y))
+                points.append((float(x), float(y)))
             pygame.draw.lines(surface, color, False, points, 2)
         
         while self.running_stats:

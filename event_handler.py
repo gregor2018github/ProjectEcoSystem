@@ -8,7 +8,7 @@ import random
 import config
 import os
 from animals import Predator, Prey, Animal
-from grass import Grass
+from grass_array import GrassArray
 from simulation import setup_simulation
 from ui import register_button_click
 from settings_window import SettingsWindow
@@ -48,14 +48,14 @@ def process_event(
     event: pygame.event.Event,
     predators: list[Predator],
     preys: list[Prey],
-    grass: dict[tuple[int, int], Grass],
+    grass: GrassArray,
     screen: pygame.Surface,
     running: bool,
     stopped: bool,
     hover_animal: Animal | None,
     locked_animal: Animal | None,
     all_animals_for_hover: list[Animal]
-) -> tuple[bool, bool, list[Predator], list[Prey], dict[tuple[int, int], Grass], bool, Animal | None, Animal | None]:
+) -> tuple[bool, bool, list[Predator], list[Prey], GrassArray, bool, Animal | None, Animal | None]:
     """Process a single pygame event and update simulation state.
     
     Handles quit events, keyboard input (space to pause), mouse motion for
@@ -65,7 +65,7 @@ def process_event(
         event: The pygame event to process.
         predators: List of predator objects.
         preys: List of prey objects.
-        grass: Dictionary of grass chunks.
+        grass: GrassArray for grass management.
         screen: The pygame display surface.
         running: Whether the simulation is running.
         stopped: Whether the simulation is paused.
@@ -79,7 +79,7 @@ def process_event(
             - stopped: Updated paused state
             - predators: Updated predators list
             - preys: Updated preys list
-            - grass: Updated grass dictionary
+            - grass: Updated GrassArray
             - event_handled_by_button: Whether a button consumed the event
             - hover_animal: Updated hover animal
             - locked_animal: Updated locked animal

@@ -7,7 +7,7 @@ import pygame
 import config
 from hover_window import HoverWindow # Import HoverWindow
 from animals import Animal, Predator, Prey
-from grass import Grass
+from grass_array import GrassArray
 
 ################################################
 # Cached fonts (initialized lazily to avoid pygame init issues)
@@ -111,7 +111,7 @@ def draw_simulation(
     screen: pygame.Surface,
     predators: list[Predator],
     preys: list[Prey],
-    grass: dict[tuple[int, int], Grass],
+    grass: GrassArray,
     hover_animal: Animal | None = None,
     current_mouse_pos: tuple[int, int] | None = None,
     locked_animal: Animal | None = None
@@ -125,32 +125,15 @@ def draw_simulation(
         screen: The pygame surface to draw on.
         predators: List of predator objects to draw.
         preys: List of prey objects to draw.
-        grass: Dictionary of grass chunks to draw.
+        grass: GrassArray for efficient grass rendering.
         hover_animal: Animal currently being hovered over, or None.
         current_mouse_pos: Current mouse position for hover window placement.
         locked_animal: Animal whose info window is locked/pinned, or None.
     """
     screen.fill((0, 0, 0))
     
-    # Draw only visible grass chunks (calculate visible range first)
-    cam_x = int(config.camera_x)
-    cam_y = int(config.camera_y)
-    chunk_size = config.CHUNKSIZE
-    
-    # Calculate visible chunk range
-    start_i = max(0, cam_x // chunk_size)
-    end_i = (cam_x + config.XLIM) // chunk_size + 1
-    start_j = max(0, cam_y // chunk_size)
-    end_j = (cam_y + config.YLIM) // chunk_size + 1
-    
-    # Only iterate over visible chunks
-    for i in range(start_i, end_i):
-        for j in range(start_j, end_j):
-            g = grass.get((i, j))
-            if g is not None:
-                screen_x = i * chunk_size - cam_x
-                screen_y = j * chunk_size - cam_y
-                g.draw(screen, (screen_x, screen_y), chunk_size)
+    # Draw grass using GrassArray's optimized method
+    grass.draw_visible(screen, int(config.camera_x), int(config.camera_y))
     
     for p in preys: # Draw the prey
         p.draw(screen)

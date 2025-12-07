@@ -11,7 +11,7 @@ import random
 import config
 
 if TYPE_CHECKING:
-    from grass import Grass
+    from grass_array import GrassArray
 
 ###############################################
 # General animal class definition
@@ -63,8 +63,8 @@ class Animal(ABC):
         Returns:
             A pygame.Rect representing the animal's bounding box in screen coordinates.
         """
-        screen_x = self.x - config.camera_x
-        screen_y = self.y - config.camera_y
+        screen_x = int(self.x - config.camera_x)
+        screen_y = int(self.y - config.camera_y)
         return pygame.Rect(screen_x - self.SIZE, screen_y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
 
     @abstractmethod
@@ -119,12 +119,12 @@ class Animal(ABC):
         return False  # Mark as alive if food is not depleted
 
     @abstractmethod
-    def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
+    def update(self, animals: list[Animal], grass: GrassArray) -> None:
         """Update the animal's state for one simulation tick.
         
         Args:
             animals: List of all animals in the simulation.
-            grass: Dictionary mapping chunk coordinates to Grass objects.
+            grass: GrassArray for grass management.
         """
         pass
 
@@ -199,7 +199,7 @@ class Predator(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
     
-    def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
+    def update(self, animals: list[Animal], grass: GrassArray) -> None:
         """Update the predator's state for one simulation tick.
         
         Handles aging, energy consumption, predator avoidance, hunting behavior,
@@ -208,7 +208,7 @@ class Predator(Animal):
         
         Args:
             animals: List of all animals in the simulation.
-            grass: Dictionary mapping chunk coordinates to Grass objects (unused by predators).
+            grass: GrassArray for grass management (unused by predators).
         """
         self.killed = False # means it killed something this round
         self.avoiding_predator_flag = False # Reset at the start of each update cycle
@@ -358,7 +358,7 @@ class Prey(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
   
-    def update(self, animals: list[Animal], grass: dict[tuple[int, int], Grass]) -> None:
+    def update(self, animals: list[Animal], grass: GrassArray) -> None:
         """Update the prey's state for one simulation tick.
         
         Handles aging, fleeing from predators, energy consumption, movement
@@ -366,7 +366,7 @@ class Prey(Animal):
         
         Args:
             animals: List of all animals in the simulation.
-            grass: Dictionary mapping chunk coordinates to Grass objects.
+            grass: GrassArray for grass management.
         """
         # Reset status flags at the beginning of each update
         self.is_fleeing = False
