@@ -1,6 +1,14 @@
+################################################
+# Imports
+################################################
+
 import pygame
 import config
 from animals import Predator, Prey # Import specific animal classes for isinstance checks
+
+################################################
+# Hover Window Class
+################################################
 
 class HoverWindow:
     def __init__(self, animal, anchor_pos): # Changed mouse_pos to anchor_pos

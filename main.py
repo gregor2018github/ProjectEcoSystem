@@ -1,4 +1,7 @@
-# IMPORTS
+###############################################
+# Imports
+###############################################
+
 import pygame
 import config                        # CONSTANTS
 from animals import Predator, Prey   # Animal classes
@@ -7,7 +10,9 @@ from simulation import setup_simulation, update_simulation              # Simula
 from ui import draw_simulation       # UI function
 from event_handler import process_event, initialize_sounds  # Event handling function
 
-# MAIN 
+###############################################
+# Main
+############################################### 
 
 def main():
     pygame.init()

@@ -1,9 +1,16 @@
+################################################
+# Imports
+################################################
+
 import random
 import config
 from animals import Predator, Prey
 from grass import Grass
 
-# Simulation setup: initialize grass grid
+################################################
+# Simulation Setup and Update Functions
+################################################
+
 def setup_simulation():
     predators = [Predator(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREDATORS)]
     preys = [Prey(random.uniform(0, config.XLIM), random.uniform(0, config.YLIM)) for _ in range(config.NUM_PREYS)]

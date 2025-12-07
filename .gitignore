@@ -176,4 +176,7 @@ poetry.toml
 pyrightconfig.json
 
 # personal test files
-*test_lab.py
+test_lab*
+
+# files from performance profiling
+*.prof

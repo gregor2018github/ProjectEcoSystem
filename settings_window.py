@@ -1,7 +1,15 @@
+###############################################
+# Imports
+###############################################
+
 import pygame
 import config
 from ui import draw_button, register_button_click
 from collections import OrderedDict
+
+###############################################
+# Settings Window Class
+###############################################
 
 class SettingsWindow:
     def __init__(self, screen):
@@ -77,6 +85,10 @@ class SettingsWindow:
         self.running_settings = True
         self.action = None
         self.cursor_timer = 0  # For blinking cursor
+
+###############################################
+# Settings Window Main Loop
+################################################
 
     def run(self):
         """

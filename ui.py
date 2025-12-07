@@ -1,6 +1,14 @@
+################################################
+# Imports
+################################################
+
 import pygame
 import config
 from hover_window import HoverWindow # Import HoverWindow
+
+################################################
+# Button Drawing Functions
+################################################
 
 # Track the button that was last clicked and when
 button_clicked = None
@@ -46,6 +54,10 @@ def register_button_click(rect):
     global button_clicked, button_click_time
     button_clicked = rect
     button_click_time = pygame.time.get_ticks()
+
+#################################################
+# Main Drawing Function for Simulation
+#################################################
 
 # Updated draw_simulation(): use draw_button for all buttons
 # Add hover_animal, current_mouse_pos, and locked_animal parameters

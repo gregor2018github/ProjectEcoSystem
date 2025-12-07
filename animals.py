@@ -1,9 +1,17 @@
+
+###############################################
+# Imports
+###############################################
+
 from abc import ABC, abstractmethod
 import pygame
 import random
 import config
 
-# Animal class definitions
+###############################################
+# General animal class definition
+###############################################
+
 class Animal(ABC):
     def __init__(self, x, y):
         self.x = x
@@ -68,6 +76,10 @@ class Animal(ABC):
     @abstractmethod
     def draw(self, screen):
         pass
+
+###############################################
+# Predators
+###############################################
 
 class Predator(Animal):
     COLOR = (255, 0, 0)  # Red
@@ -180,7 +192,11 @@ class Predator(Animal):
         # Boundary checks
         self.x = max(0, min(config.XLIM, self.x))
         self.y = max(0, min(config.YLIM, self.y))
-        
+
+###############################################
+# Prey 
+###############################################
+
 class Prey(Animal):
     COLOR = (255, 255, 255)  # Blue
     SIZE = 3

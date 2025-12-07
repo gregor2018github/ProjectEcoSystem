@@ -1,6 +1,14 @@
+################################################
+# Imports
+################################################
+
 import pygame
 import config
 from ui import draw_button, register_button_click
+
+################################################
+# Statistics Window Class
+################################################
 
 class StatisticsWindow:
     def __init__(self):

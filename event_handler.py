@@ -1,3 +1,7 @@
+################################################
+# Imports
+################################################
+
 import pygame
 import random
 import config
@@ -7,6 +11,10 @@ from simulation import setup_simulation
 from ui import register_button_click
 from settings_window import SettingsWindow
 from statistics_window import StatisticsWindow
+
+################################################
+# Sound management
+################################################
 
 # Initialize click sound
 click_sound = None
@@ -23,6 +31,10 @@ def initialize_sounds():
 def play_click_sound():
     if config.BUTTON_CLICK_SOUND_ENABLED and click_sound:
         pygame.mixer.Sound.play(click_sound)
+
+################################################
+# Event processing function
+################################################
 
 def process_event(event, predators, preys, grass, screen, running, stopped, hover_animal, locked_animal, all_animals_for_hover):
     event_handled_by_button = False # Initialize flag
