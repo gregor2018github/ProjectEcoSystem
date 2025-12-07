@@ -77,7 +77,7 @@ STATS_LINE_HEIGHT = 20
 # Simulation
 ################################################
     
-FPS = 60
+FPS = 120
 
 # FPS counter (updates every 2 seconds for lightweight performance)
 current_fps = 0.0  # Displayed FPS value
