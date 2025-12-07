@@ -33,6 +33,10 @@ def setup_simulation() -> tuple[list[Predator], list[Prey], dict[tuple[int, int]
     for i in range(cols):
         for j in range(rows):
             grass[(i, j)] = Grass()
+    
+    # Initialize total grass tracking
+    config.total_grass = len(grass) * config.DEFAULT_GRASS_AMOUNT
+    
     return predators, preys, grass
 
 def update_simulation(
@@ -58,10 +62,6 @@ def update_simulation(
         p.update(all_animals, grass) # Pass the full list
     for p in preys:
         p.update(all_animals, grass) # Pass the full list
-
-    # Update grass chunks
-    for g in grass.values():
-        g.update()
         
     # Count deaths before removal
     preys_before = len(preys)
@@ -96,13 +96,19 @@ def update_simulation(
     # Increment simulation round
     config.rounds_passed += 1
 
-    # Compute total grass and append historic value
-    total_grass = sum(g.amount for g in grass.values())
+    # Update grass and track total incrementally
+    # Calculate growth added this tick (capped chunks don't grow)
+    grass_growth_this_tick = 0.0
+    for g in grass.values():
+        old_amount = g.amount
+        g.update()
+        grass_growth_this_tick += g.amount - old_amount
+    config.total_grass += grass_growth_this_tick
 
     # Update stats history (using the updated separate lists)
     config.stats_history["Prey Count"].append(len(preys))
     config.stats_history["Predator Count"].append(len(predators))
-    config.stats_history["Grass Total"].append(total_grass)
+    config.stats_history["Grass Total"].append(config.total_grass)
     config.stats_history["Prey deceased"].append(config.prey_deceased)
     config.stats_history["Predator deceased"].append(config.predator_deceased)
     config.stats_history["Prey born"].append(config.prey_born)

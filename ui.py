@@ -10,6 +10,27 @@ from animals import Animal, Predator, Prey
 from grass import Grass
 
 ################################################
+# Cached fonts (initialized lazily to avoid pygame init issues)
+################################################
+
+_font_stats: pygame.font.Font | None = None
+_font_button: pygame.font.Font | None = None
+
+def get_stats_font() -> pygame.font.Font:
+    """Get the cached stats font, initializing if needed."""
+    global _font_stats
+    if _font_stats is None:
+        _font_stats = pygame.font.Font(None, config.STATS_FONT_SIZE)
+    return _font_stats
+
+def get_button_font() -> pygame.font.Font:
+    """Get the cached button font, initializing if needed."""
+    global _font_button
+    if _font_button is None:
+        _font_button = pygame.font.Font(None, 24)
+    return _font_button
+
+################################################
 # Button Drawing Functions
 ################################################
 
@@ -110,23 +131,33 @@ def draw_simulation(
         locked_animal: Animal whose info window is locked/pinned, or None.
     """
     screen.fill((0, 0, 0))
-    # Draw the grass grid with camera offset
-    for (i, j), g in grass.items():
-        # Calculate world position
-        world_x = i * config.CHUNKSIZE
-        world_y = j * config.CHUNKSIZE
-        # Apply camera offset
-        screen_x = world_x - int(config.camera_x)
-        screen_y = world_y - int(config.camera_y)
-        # Only draw if visible on screen
-        if -config.CHUNKSIZE <= screen_x <= config.XLIM and -config.CHUNKSIZE <= screen_y <= config.YLIM:
-            g.draw(screen, (screen_x, screen_y), config.CHUNKSIZE)
+    
+    # Draw only visible grass chunks (calculate visible range first)
+    cam_x = int(config.camera_x)
+    cam_y = int(config.camera_y)
+    chunk_size = config.CHUNKSIZE
+    
+    # Calculate visible chunk range
+    start_i = max(0, cam_x // chunk_size)
+    end_i = (cam_x + config.XLIM) // chunk_size + 1
+    start_j = max(0, cam_y // chunk_size)
+    end_j = (cam_y + config.YLIM) // chunk_size + 1
+    
+    # Only iterate over visible chunks
+    for i in range(start_i, end_i):
+        for j in range(start_j, end_j):
+            g = grass.get((i, j))
+            if g is not None:
+                screen_x = i * chunk_size - cam_x
+                screen_y = j * chunk_size - cam_y
+                g.draw(screen, (screen_x, screen_y), chunk_size)
+    
     for p in preys: # Draw the prey
         p.draw(screen)
     for p in predators: # Draw the predators
         p.draw(screen)
     # Render statistics text in the top-left corner
-    font = pygame.font.Font(None, config.STATS_FONT_SIZE)
+    font = get_stats_font()
     # Format rounds in thousands (K)
     rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
     # Format FPS display
@@ -186,7 +217,7 @@ def draw_simulation(
     add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    font_button = pygame.font.Font(None, 24)
+    font_button = get_button_font()
 
     draw_button(screen, exit_button_rect, "Exit", font_button, button_hover_mouse_pos)
     draw_button(screen, pause_button_rect, "Stop/Play", font_button, button_hover_mouse_pos)

@@ -20,6 +20,9 @@ NUM_PREDATORS = 5
 NUM_PREYS = 55
 CHUNKSIZE = 10  # 10x10 pixels
 
+# Grass total tracking (updated incrementally for performance)
+total_grass = 0.0
+
 ################################################
 # PREDATOR behavior
 ################################################

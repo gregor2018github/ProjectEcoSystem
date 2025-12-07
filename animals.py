@@ -439,5 +439,8 @@ class Prey(Animal):
                 self.is_eating = True
                 self.grass_eaten += gain
             self.food = min(config.PREY_MAX_FOOD, self.food + gain)
+            # Track grass consumed for global total
+            grass_consumed = min(1, grass[chunk].amount)  # Can't consume more than available
             grass[chunk].amount = max(0, grass[chunk].amount - 1)
+            config.total_grass -= grass_consumed
 
