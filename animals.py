@@ -12,6 +12,7 @@ import config
 
 if TYPE_CHECKING:
     from grass_array import GrassArray
+    from spatial_hash import SpatialHash
 
 ###############################################
 # General animal class definition
@@ -119,12 +120,11 @@ class Animal(ABC):
         return False  # Mark as alive if food is not depleted
 
     @abstractmethod
-    def update(self, animals: list[Animal], grass: GrassArray) -> None:
+    def update(self, *args, **kwargs) -> None:
         """Update the animal's state for one simulation tick.
         
         Args:
-            animals: List of all animals in the simulation.
-            grass: GrassArray for grass management.
+            Subclass-specific arguments for spatial hashes and grass.
         """
         pass
 
@@ -199,7 +199,7 @@ class Predator(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
     
-    def update(self, predators: list[Predator], preys: list[Prey], grass: GrassArray) -> None:
+    def update(self, predator_hash: SpatialHash[Predator], prey_hash: SpatialHash[Prey], grass: GrassArray) -> None:
         """Update the predator's state for one simulation tick.
         
         Handles aging, energy consumption, predator avoidance, hunting behavior,
@@ -207,8 +207,8 @@ class Predator(Animal):
         other predators when not starving, and move randomly when idle.
         
         Args:
-            predators: List of all predators in the simulation.
-            preys: List of all prey in the simulation.
+            predator_hash: Spatial hash of all predators for fast proximity queries.
+            prey_hash: Spatial hash of all prey for fast proximity queries.
             grass: GrassArray for grass management (unused by predators).
         """
         self.killed = False # means it killed something this round
@@ -234,13 +234,14 @@ class Predator(Animal):
 
         # Separate moving loops for evading predators, hunting prey, and moving randomly
         
-        # Check for nearby predators and calculate avoidance vector
+        # Check for nearby predators and calculate avoidance vector (using spatial hash)
         if config.PRED_AVOID_PRED:
-            for other in predators:
+            nearby_predators = predator_hash.get_nearby(self.x, self.y, config.PREDATOR_PREDATOR_AVOID_DISTANCE)
+            for other in nearby_predators:
                 if other is not self:
                     dx = self.x - other.x  # Vector pointing away from the other predator
                     dy = self.y - other.y
-                    dist_sq = dx**2 + dy**2 # Use squared distance for efficiency
+                    dist_sq = dx*dx + dy*dy # Use squared distance for efficiency
                     if dist_sq < config.PREDATOR_PREDATOR_AVOID_DISTANCE**2 and dist_sq != 0:
                         predator_too_close = True
                         dist = dist_sq**0.5
@@ -252,21 +253,27 @@ class Predator(Animal):
         if config.PRED_AVOID_PRED and predator_too_close and not self.starving:
             self.hunting = False
             self.avoiding_predator_flag = True # Set status flag
-            norm = (avoid_dx**2 + avoid_dy**2)**0.5 or 1 # Normalize the total avoidance vector
+            norm = (avoid_dx*avoid_dx + avoid_dy*avoid_dy)**0.5 or 1 # Normalize the total avoidance vector
             self.x += (avoid_dx / norm) * config.PREDATOR_SPEED 
             self.y += (avoid_dy / norm) * config.PREDATOR_SPEED
         else:
-            # Find the closest prey - iterate directly over preys list (no isinstance needed)
-            for prey in preys:
+            # Find the closest prey using spatial hash
+            nearby_preys = prey_hash.get_nearby(self.x, self.y, config.PREDATOR_SMELL_DISTANCE)
+            for prey in nearby_preys:
                 dx = prey.x - self.x
                 dy = prey.y - self.y
-                dist = (dx**2 + dy**2)**0.5
-                # check if prey is in smell distance
-                if dist < config.PREDATOR_SMELL_DISTANCE:
+                dist_sq = dx*dx + dy*dy
+                # check if prey is in smell distance (using squared distance)
+                if dist_sq < config.PREDATOR_SMELL_DISTANCE**2:
                     # Check if prey is closer than the current target
-                    if dist < min_dist_prey:
-                        min_dist_prey = dist
+                    if dist_sq < min_dist_prey:
+                        min_dist_prey = dist_sq
                         target = prey
+            
+            # Convert squared distance to actual distance if we found a target
+            if target:
+                min_dist_prey = min_dist_prey**0.5
+            
             # If a target is found, move towards it
             if target:
                 self.hunting = True
@@ -357,14 +364,14 @@ class Prey(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
   
-    def update(self, predators: list[Predator], grass: GrassArray) -> None:
+    def update(self, predator_hash: SpatialHash[Predator], grass: GrassArray) -> None:
         """Update the prey's state for one simulation tick.
         
         Handles aging, fleeing from predators, energy consumption, movement
         towards areas with more grass, and eating grass to gain energy.
         
         Args:
-            predators: List of all predators in the simulation.
+            predator_hash: Spatial hash of all predators for fast proximity queries.
             grass: GrassArray for grass management.
         """
         # Reset status flags at the beginning of each update
@@ -379,18 +386,20 @@ class Prey(Animal):
                 config.prey_dead_by_age += 1
                 return
 
-        # Flee from predators (animal flees first, then the cost of moving is calculated)
+        # Flee from predators using spatial hash (animal flees first, then the cost of moving is calculated)
         flee_dx = 0
         flee_dy = 0
-        for predator in predators:
+        nearby_predators = predator_hash.get_nearby(self.x, self.y, config.PREY_FEAR_DISTANCE)
+        for predator in nearby_predators:
             dx = self.x - predator.x
             dy = self.y - predator.y
-            dist = (dx**2 + dy**2) ** 0.5
-            if dist < config.PREY_FEAR_DISTANCE and dist != 0:
+            dist_sq = dx*dx + dy*dy
+            if dist_sq < config.PREY_FEAR_DISTANCE**2 and dist_sq != 0:
+                dist = dist_sq ** 0.5
                 flee_dx += dx / dist
                 flee_dy += dy / dist
         if flee_dx or flee_dy:
-            norm = (flee_dx**2 + flee_dy**2) ** 0.5 or 1
+            norm = (flee_dx*flee_dx + flee_dy*flee_dy) ** 0.5 or 1
             self.x += (flee_dx / norm) * config.PREY_SPEED
             self.y += (flee_dy / norm) * config.PREY_SPEED
             self.is_fleeing = True # Set status flag
@@ -404,42 +413,56 @@ class Prey(Animal):
             config.prey_dead_by_starvation += 1
             return
         
-        # Move away from areas with little grass
-        chunk = (int(self.x) // config.CHUNKSIZE, int(self.y) // config.CHUNKSIZE)
-        if chunk in grass:
-            current_amount = grass[chunk].amount
-            grass_dx, grass_dy = 0, 0
-            # Look in a 3x3 grid
-            for i in [-1, 0, 1]:
-                for j in [-1, 0, 1]:
+        # Move towards areas with more grass (using direct array access for speed)
+        chunk_i = int(self.x) // config.CHUNKSIZE
+        chunk_j = int(self.y) // config.CHUNKSIZE
+        
+        if 0 <= chunk_i < grass.cols and 0 <= chunk_j < grass.rows:
+            current_amount = grass.amounts[chunk_i, chunk_j]
+            grass_dx, grass_dy = 0.0, 0.0
+            
+            # Look in a 3x3 grid using direct array access
+            for i in range(-1, 2):
+                for j in range(-1, 2):
                     if i == 0 and j == 0:
                         continue
-                    neighbor = (chunk[0] + i, chunk[1] + j)
-                    if neighbor in grass:
-                        diff = grass[neighbor].amount - current_amount
+                    ni, nj = chunk_i + i, chunk_j + j
+                    if 0 <= ni < grass.cols and 0 <= nj < grass.rows:
+                        diff = grass.amounts[ni, nj] - current_amount
                         # Only add if neighbor has more grass
                         if diff > 0:
                             grass_dx += i * diff
                             grass_dy += j * diff
+            
             if grass_dx != 0 or grass_dy != 0:
-                norm = (grass_dx**2 + grass_dy**2) ** 0.5 or 1
+                norm = (grass_dx*grass_dx + grass_dy*grass_dy) ** 0.5 or 1
                 # Scale the adjustment (using half of PREY_SPEED)
                 self.x += (grass_dx / norm) * (config.PREY_SPEED * 0.5)
                 self.y += (grass_dy / norm) * (config.PREY_SPEED * 0.5)
         
-        # Boundary checks (use world size, not screen size)
-        self.x = max(0, min(config.WORLD_WIDTH, self.x))
-        self.y = max(0, min(config.WORLD_HEIGHT, self.y))
-        # Consume grass and gain food based on current patch
-        if chunk in grass:
-            gain = grass[chunk].amount * config.PREY_FOOD_GAIN_PER_GRASS
-            # Prey is eating if it gains food and is not full, and grass is available
-            if gain > 0 and self.food < config.PREY_MAX_FOOD and grass[chunk].amount > 0:
-                self.is_eating = True
-                self.grass_eaten += gain
-            self.food = min(config.PREY_MAX_FOOD, self.food + gain)
-            # Track grass consumed for global total
-            grass_consumed = min(1, grass[chunk].amount)  # Can't consume more than available
-            grass[chunk].amount = max(0, grass[chunk].amount - 1)
-            config.total_grass -= grass_consumed
+            # Boundary checks (use world size, not screen size)
+            self.x = max(0, min(config.WORLD_WIDTH, self.x))
+            self.y = max(0, min(config.WORLD_HEIGHT, self.y))
+            
+            # Recalculate chunk after movement
+            chunk_i = int(self.x) // config.CHUNKSIZE
+            chunk_j = int(self.y) // config.CHUNKSIZE
+            
+            # Consume grass and gain food based on current patch (direct array access)
+            if 0 <= chunk_i < grass.cols and 0 <= chunk_j < grass.rows:
+                grass_amount = grass.amounts[chunk_i, chunk_j]
+                gain = grass_amount * config.PREY_FOOD_GAIN_PER_GRASS
+                # Prey is eating if it gains food and is not full, and grass is available
+                if gain > 0 and self.food < config.PREY_MAX_FOOD and grass_amount > 0:
+                    self.is_eating = True
+                    self.grass_eaten += gain
+                self.food = min(config.PREY_MAX_FOOD, self.food + gain)
+                # Track grass consumed for global total
+                grass_consumed = min(1.0, grass_amount)  # Can't consume more than available
+                grass.amounts[chunk_i, chunk_j] = max(0, grass_amount - 1)
+                config.total_grass -= grass_consumed
+        else:
+            # Boundary checks if outside grass bounds
+            self.x = max(0, min(config.WORLD_WIDTH, self.x))
+            self.y = max(0, min(config.WORLD_HEIGHT, self.y))
 

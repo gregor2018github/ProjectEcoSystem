@@ -36,6 +36,10 @@ class GrassArray:
         self.color_lut = np.zeros((256, 3), dtype=np.uint8)
         for i in range(256):
             self.color_lut[i] = (0, int(config.GRASS_COLOR_MAX * i / 255), 0)
+        
+        # Pre-allocate surface for batch drawing (will be resized as needed)
+        self._grass_surface: pygame.Surface | None = None
+        self._last_visible_size: tuple[int, int] = (0, 0)
     
     def update(self) -> float:
         """Update all grass in one vectorized operation.
@@ -89,7 +93,10 @@ class GrassArray:
         return float(self.amounts.sum())
     
     def draw_visible(self, screen: pygame.Surface, cam_x: int, cam_y: int) -> None:
-        """Draw only visible grass chunks efficiently.
+        """Draw only visible grass chunks efficiently using surface blitting.
+        
+        Uses NumPy array operations to build a pixel array and then scales it,
+        which is much faster than drawing individual rectangles.
         
         Args:
             screen: Pygame surface to draw on.
@@ -104,6 +111,12 @@ class GrassArray:
         start_j = max(0, cam_y // chunk_size)
         end_j = min(self.rows, (cam_y + config.YLIM) // chunk_size + 1)
         
+        visible_width = end_i - start_i
+        visible_height = end_j - start_j
+        
+        if visible_width <= 0 or visible_height <= 0:
+            return
+        
         # Get visible slice of amounts
         visible = self.amounts[start_i:end_i, start_j:end_j]
         
@@ -111,13 +124,25 @@ class GrassArray:
         indices = (visible * 255 / config.GRASS_MAX_AMOUNT).astype(np.uint8)
         np.clip(indices, 0, 255, out=indices)
         
-        # Draw each visible chunk
-        for di, i in enumerate(range(start_i, end_i)):
-            screen_x = i * chunk_size - cam_x
-            for dj, j in enumerate(range(start_j, end_j)):
-                screen_y = j * chunk_size - cam_y
-                color = self.color_lut[indices[di, dj]]
-                pygame.draw.rect(screen, color, (screen_x, screen_y, chunk_size, chunk_size))
+        # Build RGB pixel array using the lookup table (vectorized)
+        # indices shape is (width, height), we need RGB values
+        pixel_colors = self.color_lut[indices]  # Shape: (width, height, 3)
+        
+        # Create a small surface from the pixel array
+        # pygame.surfarray expects (width, height, 3) which matches our array
+        small_surface = pygame.surfarray.make_surface(pixel_colors)
+        
+        # Scale up to actual pixel size
+        scaled_width = visible_width * chunk_size
+        scaled_height = visible_height * chunk_size
+        scaled_surface = pygame.transform.scale(small_surface, (scaled_width, scaled_height))
+        
+        # Calculate screen position offset (sub-chunk alignment)
+        offset_x = start_i * chunk_size - cam_x
+        offset_y = start_j * chunk_size - cam_y
+        
+        # Blit the scaled surface to the screen
+        screen.blit(scaled_surface, (offset_x, offset_y))
     
     # Dict-like interface for compatibility with existing animal code
     def get(self, key: tuple[int, int], default=None):

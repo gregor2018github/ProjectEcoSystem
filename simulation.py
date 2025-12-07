@@ -7,6 +7,11 @@ import random
 import config
 from animals import Predator, Prey
 from grass_array import GrassArray
+from spatial_hash import SpatialHash
+
+# Pre-allocate spatial hash grids (reused each frame to avoid allocations)
+_predator_hash: SpatialHash[Predator] = SpatialHash(max(config.PREDATOR_SMELL_DISTANCE, config.PREDATOR_PREDATOR_AVOID_DISTANCE))
+_prey_hash: SpatialHash[Prey] = SpatialHash(config.PREDATOR_SMELL_DISTANCE)
 
 ################################################
 # Simulation Setup and Update Functions
@@ -52,11 +57,15 @@ def update_simulation(
         preys: List of prey objects to update (modified in place).
         grass: GrassArray for grass management.
     """
-    # Update animals - pass separate lists to avoid isinstance() calls
+    # Build spatial hash grids for fast proximity queries
+    _predator_hash.build_from_list(predators)
+    _prey_hash.build_from_list(preys)
+    
+    # Update animals - pass spatial hash for fast lookups
     for p in predators:
-        p.update(predators, preys, grass)
+        p.update(_predator_hash, _prey_hash, grass)
     for p in preys:
-        p.update(predators, grass)
+        p.update(_predator_hash, grass)
         
     # Count deaths before removal
     preys_before = len(preys)

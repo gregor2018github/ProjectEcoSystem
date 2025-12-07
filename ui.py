@@ -212,7 +212,7 @@ def draw_simulation(
     # Draw locked animal's info window if one is selected and alive
     if locked_animal and locked_animal.alive:
         # Anchor position for locked window is the animal's screen position (with camera offset)
-        locked_anchor_pos = (locked_animal.x - config.camera_x, locked_animal.y - config.camera_y)
+        locked_anchor_pos = (int(locked_animal.x - config.camera_x), int(locked_animal.y - config.camera_y))
         hw_locked = HoverWindow(locked_animal, locked_anchor_pos)
         hw_locked.draw(screen)
     
