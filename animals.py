@@ -199,7 +199,7 @@ class Predator(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
     
-    def update(self, animals: list[Animal], grass: GrassArray) -> None:
+    def update(self, predators: list[Predator], preys: list[Prey], grass: GrassArray) -> None:
         """Update the predator's state for one simulation tick.
         
         Handles aging, energy consumption, predator avoidance, hunting behavior,
@@ -207,7 +207,8 @@ class Predator(Animal):
         other predators when not starving, and move randomly when idle.
         
         Args:
-            animals: List of all animals in the simulation.
+            predators: List of all predators in the simulation.
+            preys: List of all prey in the simulation.
             grass: GrassArray for grass management (unused by predators).
         """
         self.killed = False # means it killed something this round
@@ -235,8 +236,8 @@ class Predator(Animal):
         
         # Check for nearby predators and calculate avoidance vector
         if config.PRED_AVOID_PRED:
-            for other in animals:
-                if isinstance(other, Predator) and other != self:
+            for other in predators:
+                if other is not self:
                     dx = self.x - other.x  # Vector pointing away from the other predator
                     dy = self.y - other.y
                     dist_sq = dx**2 + dy**2 # Use squared distance for efficiency
@@ -255,19 +256,17 @@ class Predator(Animal):
             self.x += (avoid_dx / norm) * config.PREDATOR_SPEED 
             self.y += (avoid_dy / norm) * config.PREDATOR_SPEED
         else:
-            # Find the closest prey only if not avoiding other predators
-            for prey in animals:
-                # Ensure we are only targeting Prey
-                if isinstance(prey, Prey): 
-                    dx = prey.x - self.x
-                    dy = prey.y - self.y
-                    dist = (dx**2 + dy**2)**0.5
-                    # check if prey is in smell distance
-                    if dist < config.PREDATOR_SMELL_DISTANCE:
-                        # Check if prey is closer than the current target
-                        if dist < min_dist_prey:
-                            min_dist_prey = dist
-                            target = prey
+            # Find the closest prey - iterate directly over preys list (no isinstance needed)
+            for prey in preys:
+                dx = prey.x - self.x
+                dy = prey.y - self.y
+                dist = (dx**2 + dy**2)**0.5
+                # check if prey is in smell distance
+                if dist < config.PREDATOR_SMELL_DISTANCE:
+                    # Check if prey is closer than the current target
+                    if dist < min_dist_prey:
+                        min_dist_prey = dist
+                        target = prey
             # If a target is found, move towards it
             if target:
                 self.hunting = True
@@ -358,14 +357,14 @@ class Prey(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
   
-    def update(self, animals: list[Animal], grass: GrassArray) -> None:
+    def update(self, predators: list[Predator], grass: GrassArray) -> None:
         """Update the prey's state for one simulation tick.
         
         Handles aging, fleeing from predators, energy consumption, movement
         towards areas with more grass, and eating grass to gain energy.
         
         Args:
-            animals: List of all animals in the simulation.
+            predators: List of all predators in the simulation.
             grass: GrassArray for grass management.
         """
         # Reset status flags at the beginning of each update
@@ -380,10 +379,10 @@ class Prey(Animal):
                 config.prey_dead_by_age += 1
                 return
 
-        # Flee from predators (animal flees first, then the cost of movign is calculated)
+        # Flee from predators (animal flees first, then the cost of moving is calculated)
         flee_dx = 0
         flee_dy = 0
-        for predator in animals:
+        for predator in predators:
             dx = self.x - predator.x
             dy = self.y - predator.y
             dist = (dx**2 + dy**2) ** 0.5

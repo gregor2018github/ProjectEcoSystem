@@ -52,14 +52,11 @@ def update_simulation(
         preys: List of prey objects to update (modified in place).
         grass: GrassArray for grass management.
     """
-    # Combine predators and preys into a single list for interaction checks
-    all_animals = predators + preys 
-
-    # Update animals - pass the combined list to each animal's update method
+    # Update animals - pass separate lists to avoid isinstance() calls
     for p in predators:
-        p.update(all_animals, grass) # Pass the full list
+        p.update(predators, preys, grass)
     for p in preys:
-        p.update(all_animals, grass) # Pass the full list
+        p.update(predators, grass)
         
     # Count deaths before removal
     preys_before = len(preys)
