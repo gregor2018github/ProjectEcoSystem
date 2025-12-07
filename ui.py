@@ -129,8 +129,11 @@ def draw_simulation(
     font = pygame.font.Font(None, config.STATS_FONT_SIZE)
     # Format rounds in thousands (K)
     rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
+    # Format FPS display
+    fps_display = f"{config.current_fps:.0f}" if config.current_fps > 0 else "--"
     stats_descr = [
         f"Rounds:",
+        f"FPS:",
         "",  # Blank line for separation
         f"Prey:",
         f"Predators:",
@@ -146,6 +149,7 @@ def draw_simulation(
     ]
     stats = [
         f"{rounds_display}",
+        f"{fps_display}",
         "",  # Blank line for separation
         f"{len(preys)} (Born: {config.prey_born})",
         f"{len(predators)} (Born: {config.predator_born})",

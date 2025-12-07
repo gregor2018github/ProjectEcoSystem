@@ -51,8 +51,23 @@ def main() -> None:
     hover_animal = None # Stores the animal currently being hovered over
     current_mouse_pos = (0, 0) # Stores the current mouse position for hover window
     locked_animal = None # Stores the animal whose info window is locked
+    
+    # FPS counter variables (lightweight, updates every 2 seconds)
+    fps_frame_count = 0
+    fps_timer = 0.0
 
     while running:
+        # Track frame time for FPS calculation
+        dt = clock.get_time() / 1000.0  # Delta time in seconds
+        fps_frame_count += 1
+        fps_timer += dt
+        
+        # Update displayed FPS every 2 seconds
+        if fps_timer >= config.FPS_UPDATE_INTERVAL:
+            config.current_fps = fps_frame_count / fps_timer
+            fps_frame_count = 0
+            fps_timer = 0.0
+        
         current_mouse_pos = pygame.mouse.get_pos() # Get current mouse position once per frame
         all_animals_for_hover = predators + preys # Update animal list each frame for hover/click checks
         
