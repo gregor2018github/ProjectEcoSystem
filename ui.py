@@ -10,6 +10,23 @@ from animals import Animal, Predator, Prey
 from grass_array import GrassArray
 
 ################################################
+# Minimap configuration and state
+################################################
+
+MINIMAP_WIDTH = 150  # Minimap width in pixels
+MINIMAP_MARGIN = 10  # Margin from screen edges
+MINIMAP_BORDER_WIDTH = 2  # Border thickness
+MINIMAP_SHOW_DURATION = 2000  # How long minimap stays visible after movement stops (ms)
+MINIMAP_FADE_DURATION = 300  # Duration of fade in/out transition (ms)
+
+_minimap_last_active: int = 0  # Timestamp when camera last moved (for fade-out timing)
+_minimap_fade_in_start: int = -999999  # Timestamp when fade-in started (-999999 = not active)
+_minimap_is_fading_in: bool = False  # Whether we're currently in fade-in phase
+_minimap_alpha: float = 0.0  # Current alpha value (0.0 to 1.0) for smooth transitions
+_last_camera_x: float = 0.0  # Last camera position for change detection
+_last_camera_y: float = 0.0
+
+################################################
 # Cached fonts (initialized lazily to avoid pygame init issues)
 ################################################
 
@@ -102,6 +119,102 @@ def register_button_click(rect: pygame.Rect) -> None:
     global button_clicked, button_click_time
     button_clicked = rect
     button_click_time = pygame.time.get_ticks()
+
+#################################################
+# Minimap Drawing Function
+#################################################
+
+def draw_minimap(screen: pygame.Surface) -> None:
+    """Draw a minimap showing the current viewport position in the world.
+    
+    The minimap appears when the camera moves with a smooth fade-in,
+    stays visible for a duration, then fades out smoothly.
+    Shows a black border for the world boundary and a white rectangle
+    indicating the current visible area.
+    
+    Args:
+        screen: The pygame surface to draw on.
+    """
+    global _minimap_last_active, _minimap_fade_in_start, _minimap_is_fading_in, _minimap_alpha, _last_camera_x, _last_camera_y
+    
+    current_time = pygame.time.get_ticks()
+    
+    # Check if camera has moved
+    camera_moved = config.camera_x != _last_camera_x or config.camera_y != _last_camera_y
+    if camera_moved:
+        # If minimap was fully hidden, start a new fade-in
+        if _minimap_alpha <= 0.0:
+            _minimap_fade_in_start = current_time
+            _minimap_is_fading_in = True
+        _minimap_last_active = current_time
+        _last_camera_x = config.camera_x
+        _last_camera_y = config.camera_y
+    
+    # Calculate target alpha based on state
+    time_since_fade_in_start = current_time - _minimap_fade_in_start
+    time_since_last_active = current_time - _minimap_last_active
+    
+    if _minimap_is_fading_in:
+        # Currently fading in - this takes priority over everything
+        if time_since_fade_in_start < MINIMAP_FADE_DURATION:
+            target_alpha = time_since_fade_in_start / MINIMAP_FADE_DURATION
+        else:
+            # Fade-in complete
+            target_alpha = 1.0
+            _minimap_is_fading_in = False
+    elif time_since_last_active < MINIMAP_SHOW_DURATION:
+        # Fully visible (recently moved)
+        target_alpha = 1.0
+    elif time_since_last_active < MINIMAP_SHOW_DURATION + MINIMAP_FADE_DURATION:
+        # Fading out (after movement stopped)
+        fade_progress = (time_since_last_active - MINIMAP_SHOW_DURATION) / MINIMAP_FADE_DURATION
+        target_alpha = 1.0 - fade_progress
+    else:
+        # Fully hidden
+        target_alpha = 0.0
+    
+    _minimap_alpha = max(0.0, min(1.0, target_alpha))
+    
+    # Don't draw if fully transparent
+    if _minimap_alpha <= 0.0:
+        return
+    
+    # Calculate minimap dimensions maintaining world aspect ratio
+    world_aspect = config.WORLD_WIDTH / config.WORLD_HEIGHT
+    minimap_width = MINIMAP_WIDTH
+    minimap_height = int(minimap_width / world_aspect)
+    
+    # Position minimap at bottom-left
+    minimap_x = MINIMAP_MARGIN
+    minimap_y = config.YLIM - minimap_height - MINIMAP_MARGIN
+    
+    # Create a surface with alpha channel for the minimap
+    minimap_surface = pygame.Surface((minimap_width, minimap_height), pygame.SRCALPHA)
+    
+    # Draw minimap background (same color as button background: 60, 100, 80)
+    alpha_value = int(255 * _minimap_alpha)
+    pygame.draw.rect(minimap_surface, (60, 100, 80, alpha_value), 
+                     pygame.Rect(0, 0, minimap_width, minimap_height))
+    
+    # Draw black border around minimap (world boundary)
+    pygame.draw.rect(minimap_surface, (0, 0, 0, alpha_value), 
+                     pygame.Rect(0, 0, minimap_width, minimap_height), MINIMAP_BORDER_WIDTH)
+    
+    # Calculate viewport rectangle on minimap
+    scale_x = minimap_width / config.WORLD_WIDTH
+    scale_y = minimap_height / config.WORLD_HEIGHT
+    
+    viewport_x = int(config.camera_x * scale_x)
+    viewport_y = int(config.camera_y * scale_y)
+    viewport_w = int(config.XLIM * scale_x)
+    viewport_h = int(config.YLIM * scale_y)
+    
+    # Draw white rectangle showing current viewport
+    viewport_rect = pygame.Rect(viewport_x, viewport_y, viewport_w, viewport_h)
+    pygame.draw.rect(minimap_surface, (255, 255, 255, alpha_value), viewport_rect, MINIMAP_BORDER_WIDTH)
+    
+    # Blit the minimap surface to the screen
+    screen.blit(minimap_surface, (minimap_x, minimap_y))
 
 #################################################
 # Main Drawing Function for Simulation
@@ -223,5 +336,8 @@ def draw_simulation(
             # Anchor position for hover window is the current mouse position
             hw_hover = HoverWindow(hover_animal, current_mouse_pos)
             hw_hover.draw(screen)
+    
+    # Draw minimap (shows when camera moves)
+    draw_minimap(screen)
     
     pygame.display.flip()
