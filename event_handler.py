@@ -114,8 +114,10 @@ def process_event(
         pause_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
         settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
         add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-        add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-        stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        rem_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        rem_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 6 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 7 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
 
         # Button click handling (sets event_handled_by_button to True if a button is clicked)
         if exit_button_rect.collidepoint(mouse_pos):
@@ -187,6 +189,13 @@ def process_event(
             spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM)
             predators.append(Predator(spawn_x, spawn_y))
             event_handled_by_button = True
+        elif rem_pred_button_rect.collidepoint(mouse_pos):
+            register_button_click(rem_pred_button_rect)
+            play_click_sound()
+            # Remove a random predator if any exist
+            if predators:
+                predators.pop(random.randrange(len(predators)))
+            event_handled_by_button = True
         elif add_prey_button_rect.collidepoint(mouse_pos):
             register_button_click(add_prey_button_rect)
             play_click_sound()
@@ -194,6 +203,13 @@ def process_event(
             spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM)
             spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM)
             preys.append(Prey(spawn_x, spawn_y))
+            event_handled_by_button = True
+        elif rem_prey_button_rect.collidepoint(mouse_pos):
+            register_button_click(rem_prey_button_rect)
+            play_click_sound()
+            # Remove a random prey if any exist
+            if preys:
+                preys.pop(random.randrange(len(preys)))
             event_handled_by_button = True
         elif stats_button_rect.collidepoint(mouse_pos):
             register_button_click(stats_button_rect)
