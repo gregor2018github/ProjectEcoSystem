@@ -33,8 +33,8 @@ def setup_simulation() -> tuple[list[Predator], list[Prey], GrassArray]:
     preys = [Prey(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREYS)]
     
     # Initialize grass array (much faster than dict of objects)
-    cols = config.WORLD_WIDTH // config.CHUNKSIZE
-    rows = config.WORLD_HEIGHT // config.CHUNKSIZE
+    cols = int(config.WORLD_WIDTH // config.CHUNKSIZE)
+    rows = int(config.WORLD_HEIGHT // config.CHUNKSIZE)
     grass = GrassArray(cols, rows)
     
     # Initialize total grass tracking
