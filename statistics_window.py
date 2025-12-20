@@ -48,7 +48,7 @@ class StatisticsWindow:
         self.event_chart_rect = pygame.Rect(self.margin, bottom_y, half_width, self.chart_height)
         self.stats_table_rect = pygame.Rect(self.margin + half_width + self.margin, bottom_y, half_width, self.chart_height)
         
-        self.close_rect = pygame.Rect((config.XLIM - config.BUTTON_WIDTH) // 2, config.YLIM - self.margin - config.BUTTON_HEIGHT + 10, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        self.close_rect = pygame.Rect(config.XLIM - self.margin - config.BUTTON_WIDTH, config.YLIM - self.margin - config.BUTTON_HEIGHT + 10, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
 
     def run(self) -> None:
         """Run the statistics window event loop.
