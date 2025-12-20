@@ -10,6 +10,66 @@ from simulation import update_simulation
 from animals import Predator, Prey
 from grass_array import GrassArray
 
+class Dropdown:
+    def __init__(self, x, y, width, height, options, default_index=0):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.options = options
+        self.selected_index = default_index
+        self.is_open = False
+        self.font = pygame.font.Font(None, 20)
+        self.option_rects = []
+        for i in range(len(options)):
+            self.option_rects.append(pygame.Rect(x, y + (i + 1) * height, width, height))
+
+    def draw(self, surface):
+        # Draw main button
+        color = (60, 100, 80) if not self.is_open else (40, 80, 60)
+        pygame.draw.rect(surface, color, self.rect, border_radius=4)
+        pygame.draw.rect(surface, (200, 200, 200), self.rect, 1, border_radius=4)
+        
+        text = self.options[self.selected_index]
+        text_surf = self.font.render(text, True, (255, 255, 255))
+        # Center text
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        surface.blit(text_surf, text_rect)
+
+        if self.is_open:
+            for i, rect in enumerate(self.option_rects):
+                pygame.draw.rect(surface, (50, 50, 50), rect)
+                pygame.draw.rect(surface, (200, 200, 200), rect, 1)
+                opt_text = self.options[i]
+                opt_surf = self.font.render(opt_text, True, (255, 255, 255))
+                opt_rect = opt_surf.get_rect(center=rect.center)
+                surface.blit(opt_surf, opt_rect)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.is_open:
+                # Check options
+                for i, rect in enumerate(self.option_rects):
+                    if rect.collidepoint(event.pos):
+                        self.selected_index = i
+                        self.is_open = False
+                        return True
+                # Click outside or on main button to close
+                self.is_open = False
+                return True # Consumed click
+            else:
+                if self.rect.collidepoint(event.pos):
+                    self.is_open = True
+                    return True # Opened
+        return False
+    
+    def get_value(self):
+        return self.options[self.selected_index]
+
+def get_limit_value(text_value):
+    if text_value == "MAX":
+        return 1000000000 # 1 billion, effectively max
+    elif text_value.endswith("K"):
+        return int(text_value[:-1]) * 1000
+    return 20000
+
 ################################################
 # Statistics Window Class
 ################################################
@@ -84,6 +144,34 @@ class StatisticsWindow:
         self.phase_data_points = []
         self.phase_axis_values = None
         self.last_phase_mode = -1
+
+        # Dropdowns
+        dropdown_width = 100
+        dropdown_height = 20
+        
+        # Pop chart dropdown
+        # Move it to the left to avoid overlap with FPS and Rounds counters
+        self.pop_limit_dropdown = Dropdown(
+            self.pop_chart_rect.right - dropdown_width - 250,
+            self.pop_chart_rect.top - dropdown_height - 5,
+            dropdown_width,
+            dropdown_height,
+            ["20K Rounds", "50K Rounds", "MAX Rounds"]
+        )
+        
+        # Phase chart dropdown
+        # Place it to the left of mode buttons
+        first_mode_btn_x = self.event_chart_rect.right - 3 * (btn_w + 5)
+        self.phase_limit_dropdown = Dropdown(
+            first_mode_btn_x - dropdown_width - 10,
+            bottom_y - btn_h - 5,
+            dropdown_width,
+            dropdown_height,
+            ["20K Rounds", "50K Rounds", "MAX Rounds"]
+        )
+        
+        self.last_pop_limit = get_limit_value(self.pop_limit_dropdown.get_value())
+        self.last_phase_limit = get_limit_value(self.phase_limit_dropdown.get_value())
 
     def run(self) -> bool:
         """Run the statistics window event loop.
@@ -487,6 +575,11 @@ class StatisticsWindow:
                 fps_timer = 0.0
 
             for event in pygame.event.get():
+                if self.pop_limit_dropdown.handle_event(event):
+                    continue
+                if self.phase_limit_dropdown.handle_event(event):
+                    continue
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running_stats = False
@@ -515,6 +608,19 @@ class StatisticsWindow:
             
             mouse_pos = pygame.mouse.get_pos()
 
+            # Get current limits
+            pop_limit = get_limit_value(self.pop_limit_dropdown.get_value())
+            phase_limit = get_limit_value(self.phase_limit_dropdown.get_value())
+            
+            # Check for changes
+            if pop_limit != self.last_pop_limit:
+                self.last_pop_update = -1
+                self.last_pop_limit = pop_limit
+                
+            if phase_limit != self.last_phase_limit:
+                self.last_phase_update = -1
+                self.last_phase_limit = phase_limit
+
             # Determine series and labels based on mode for phase diagram
             if self.phase_mode == 0: # Pred vs Prey
                 x_data = config.stats_history["Prey Count"]
@@ -536,9 +642,9 @@ class StatisticsWindow:
             if config.rounds_passed - self.last_pop_update >= config.UPDATE_SPEED_POPULATION_GRAPH or self.last_pop_update == -1:
                 self.pop_chart_surf.fill((30, 30, 30))
                 temp_rect = pygame.Rect(0, 0, self.pop_chart_rect.width, self.pop_chart_rect.height)
-                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Prey Count"], (255,255,255))
-                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Predator Count"], (255,0,0))
-                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Grass Total"], (0,255,0))
+                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Prey Count"], (255,255,255), limit=pop_limit)
+                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Predator Count"], (255,0,0), limit=pop_limit)
+                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Grass Total"], (0,255,0), limit=pop_limit)
                 self.last_pop_update = config.rounds_passed
 
             # Update phase diagram surface
@@ -557,7 +663,7 @@ class StatisticsWindow:
                     y_label,
                     x_col,
                     y_col,
-                    limit=config.PHASE_DIAGRAM_LIMIT
+                    limit=phase_limit
                 )
                 self.last_phase_update = config.rounds_passed
                 self.last_phase_mode = self.phase_mode
@@ -599,8 +705,9 @@ class StatisticsWindow:
 
             # Phase Diagram Header and Mode Selection
             mode_names = ["Pred vs Prey", "Pred vs Grass", "Prey vs Grass"]
+            phase_limit_text = f"{phase_limit}" if phase_limit < 1000000000 else "MAX"
             events_header_parts = [
-                ( f"Phase Diagram (Last {config.PHASE_DIAGRAM_LIMIT} Rounds)", (0, 200, 255) ),
+                ( f"Phase Diagram (Last {phase_limit_text} Rounds)", (0, 200, 255) ),
             ]
             x_offset = self.event_chart_rect.left
             y_offset = self.event_chart_rect.top - 15
@@ -653,8 +760,12 @@ class StatisticsWindow:
                     (config.stats_history["Predator Count"], (255,0,0), "Predator"),
                     (config.stats_history["Grass Total"], (0,255,0), "Grass"),
                 ]
-                draw_hover_line(self.stat_screen, self.pop_chart_rect, mouse_x, pop_series)
+                draw_hover_line(self.stat_screen, self.pop_chart_rect, mouse_x, pop_series, limit=pop_limit)
             
+            # Draw dropdowns (last to be on top)
+            self.pop_limit_dropdown.draw(self.stat_screen)
+            self.phase_limit_dropdown.draw(self.stat_screen)
+
             fps_label = self.font.render(f"FPS: {int(config.current_fps)}", True, (255,255,0))
             fps_x = config.XLIM - self.margin - fps_label.get_width()
             self.stat_screen.blit(fps_label, (fps_x, self.margin - config.BUTTON_HEIGHT))
