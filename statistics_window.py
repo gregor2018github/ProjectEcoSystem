@@ -61,6 +61,15 @@ class StatisticsWindow:
         toggle_width = 140
         self.toggle_sim_rect = pygame.Rect(self.close_rect.left - toggle_width - 10, self.close_rect.top, toggle_width, config.BUTTON_HEIGHT)
 
+        # Phase diagram mode: 0: Pred vs Prey, 1: Pred vs Grass, 2: Prey vs Grass
+        self.phase_mode = 0
+        btn_w = 110
+        btn_h = 20
+        self.mode_btns = []
+        # Position buttons above the phase diagram chart, aligned to the right
+        for i in range(3):
+            self.mode_btns.append(pygame.Rect(self.event_chart_rect.right - (3-i) * (btn_w + 5), bottom_y - btn_h - 5, btn_w, btn_h))
+
     def run(self) -> None:
         """Run the statistics window event loop.
         
@@ -111,16 +120,24 @@ class StatisticsWindow:
             rect: pygame.Rect,
             x_series: list[int | float],
             y_series: list[int | float],
+            x_label: str,
+            y_label: str,
+            x_color: tuple[int, int, int],
+            y_color: tuple[int, int, int],
             mouse_pos: tuple[int, int] | None = None,
             limit: int = config.PHASE_DIAGRAM_LIMIT
         ) -> None:
-            """Draw a phase diagram (Prey vs Predator) for the recent history.
+            """Draw a phase diagram for the recent history.
             
             Args:
                 surface: The pygame surface to draw on.
                 rect: The rectangle defining the chart area.
-                x_series: Data for the X axis (Prey).
-                y_series: Data for the Y axis (Predator).
+                x_series: Data for the X axis.
+                y_series: Data for the Y axis.
+                x_label: Label for the X axis.
+                y_label: Label for the Y axis.
+                x_color: Color for the X axis labels.
+                y_color: Color for the Y axis labels.
                 mouse_pos: Current mouse position for hover effects.
                 limit: Number of recent data points to show.
             """
@@ -135,8 +152,8 @@ class StatisticsWindow:
             if len(xs) < 2: return
 
             # Determine scaling range
-            min_x, max_x = min(xs), max(xs)
-            min_y, max_y = min(ys), max(ys)
+            min_x, max_x = float(min(xs)), float(max(xs))
+            min_y, max_y = float(min(ys)), float(max(ys))
             
             # Add padding to ranges
             pad_x = (max_x - min_x) * 0.05 if max_x != min_x else 1.0
@@ -150,10 +167,12 @@ class StatisticsWindow:
             data_points = []
             for x, y in zip(xs, ys):
                 # Map to screen coordinates
-                px = rect.left + ((x - min_x) / (max_x - min_x)) * rect.width
-                py = rect.bottom - ((y - min_y) / (max_y - min_y)) * rect.height
-                points.append((px, py))
-                data_points.append((x, y))
+                # Ensure we use floats to avoid NumPy type issues with pygame
+                xf, yf = float(x), float(y)
+                px = rect.left + ((xf - min_x) / (max_x - min_x)) * rect.width
+                py = rect.bottom - ((yf - min_y) / (max_y - min_y)) * rect.height
+                points.append((float(px), float(py)))
+                data_points.append((xf, yf))
             
             # Draw the path with gradient
             if len(points) > 1:
@@ -168,31 +187,29 @@ class StatisticsWindow:
                 
             # Draw the 'head' (current state)
             if points:
-                pygame.draw.circle(surface, (255, 255, 255), points[-1], 4)
+                pygame.draw.circle(surface, (255, 255, 255), (float(points[-1][0]), float(points[-1][1])), 4)
                 
             # Draw Axis Labels (Min/Max)
             font = self.font
-            col_prey = (255, 255, 255) # White for Prey (X)
-            col_pred = (255, 0, 0)     # Red for Predator (Y)
             
-            # X Axis Labels (Prey)
-            s_min_x = font.render(f"{int(min_x)}", True, col_prey)
-            s_max_x = font.render(f"{int(max_x)}", True, col_prey)
+            # X Axis Labels
+            s_min_x = font.render(f"{int(min_x)}", True, x_color)
+            s_max_x = font.render(f"{int(max_x)}", True, x_color)
             surface.blit(s_min_x, (rect.left, rect.bottom + 5))
             surface.blit(s_max_x, (rect.right - s_max_x.get_width(), rect.bottom + 5))
             
-            # Y Axis Labels (Predator)
-            s_min_y = font.render(f"{int(min_y)}", True, col_pred)
-            s_max_y = font.render(f"{int(max_y)}", True, col_pred)
+            # Y Axis Labels
+            s_min_y = font.render(f"{int(min_y)}", True, y_color)
+            s_max_y = font.render(f"{int(max_y)}", True, y_color)
             surface.blit(s_min_y, (rect.left - s_min_y.get_width() - 5, rect.bottom - s_min_y.get_height()))
             surface.blit(s_max_y, (rect.left - s_max_y.get_width() - 5, rect.top))
             
             # Axis Titles
-            x_title = font.render("Prey", True, col_prey)
-            y_title = font.render("Predator", True, col_pred)
-            surface.blit(x_title, (rect.centerx - x_title.get_width()//2, rect.bottom + 20))
+            x_title_surf = font.render(x_label, True, x_color)
+            y_title_surf = font.render(y_label, True, y_color)
+            surface.blit(x_title_surf, (rect.centerx - x_title_surf.get_width()//2, rect.bottom + 20))
             
-            y_title_rot = pygame.transform.rotate(y_title, 90)
+            y_title_rot = pygame.transform.rotate(y_title_surf, 90)
             surface.blit(y_title_rot, (rect.left - 30, rect.centery - y_title_rot.get_height()//2))
 
             # Hover logic
@@ -219,10 +236,15 @@ class StatisticsWindow:
                     # Prepare text
                     ratio = (val_x / val_y) if val_y != 0 else 0
                     lines = [
-                        f"Prey: {int(val_x)}",
-                        f"Pred: {int(val_y)}",
-                        f"Prey per Pred: {ratio:.2f}" if val_y != 0 else "Prey per Pred: Infinity"
+                        f"{x_label}: {int(val_x)}",
+                        f"{y_label}: {int(val_y)}",
                     ]
+                    if x_label == "Prey" and y_label == "Predator":
+                        lines.append(f"Prey per Pred: {ratio:.2f}" if val_y != 0 else "Prey per Pred: Infinity")
+                    elif x_label == "Grass" and y_label == "Predator":
+                        lines.append(f"Grass per Pred: {val_x/val_y:.1f}" if val_y != 0 else "Grass per Pred: Infinity")
+                    elif x_label == "Grass" and y_label == "Prey":
+                        lines.append(f"Grass per Prey: {val_x/val_y:.1f}" if val_y != 0 else "Grass per Prey: Infinity")
                     
                     # Calculate box size
                     box_w = 0
@@ -413,6 +435,13 @@ class StatisticsWindow:
                         register_button_click(self.toggle_sim_rect)
                         play_click_sound()
                         self.simulation_running = not self.simulation_running
+                    
+                    # Check phase diagram mode buttons
+                    for i, btn_rect in enumerate(self.mode_btns):
+                        if btn_rect.collidepoint(event.pos):
+                            register_button_click(btn_rect)
+                            play_click_sound()
+                            self.phase_mode = i
             
             if self.simulation_running:
                 update_simulation(self.predators, self.preys, self.grass)
@@ -441,8 +470,10 @@ class StatisticsWindow:
                 self.stat_screen.blit(part, (x_offset, y_offset))
                 x_offset += part.get_width()
 
+            # Phase Diagram Header and Mode Selection
+            mode_names = ["Pred vs Prey", "Pred vs Grass", "Prey vs Grass"]
             events_header_parts = [
-                ( f"Phase Diagram: Predator vs Prey (Last {config.PHASE_DIAGRAM_LIMIT} Rounds)", (0, 200, 255) ),
+                ( f"Phase Diagram (Last {config.PHASE_DIAGRAM_LIMIT} Rounds)", (0, 200, 255) ),
             ]
             x_offset = self.event_chart_rect.left
             y_offset = self.event_chart_rect.top - 15
@@ -451,15 +482,50 @@ class StatisticsWindow:
                 self.stat_screen.blit(part, (x_offset, y_offset))
                 x_offset += part.get_width()
             
+            # Draw mode selection buttons
+            for i, btn_rect in enumerate(self.mode_btns):
+                # Highlight active mode
+                btn_text = mode_names[i]
+                if self.phase_mode == i:
+                    # Draw a highlight background for the active button
+                    pygame.draw.rect(self.stat_screen, (100, 150, 120), btn_rect, border_radius=8)
+                
+                draw_button(self.stat_screen, btn_rect, btn_text, self.font, mouse_pos)
+                
+                if self.phase_mode == i:
+                    # Add a white border for the active button
+                    pygame.draw.rect(self.stat_screen, (255, 255, 255), btn_rect, 2, border_radius=8)
+
             draw_line_chart(self.stat_screen, self.pop_chart_rect, config.stats_history["Prey Count"], (255,255,255))
             draw_line_chart(self.stat_screen, self.pop_chart_rect, config.stats_history["Predator Count"], (255,0,0))
             draw_line_chart(self.stat_screen, self.pop_chart_rect, config.stats_history["Grass Total"], (0,255,0))
             
+            # Determine series and labels based on mode
+            if self.phase_mode == 0: # Pred vs Prey
+                x_data = config.stats_history["Prey Count"]
+                y_data = config.stats_history["Predator Count"]
+                x_label, y_label = "Prey", "Predator"
+                x_col, y_col = (255, 255, 255), (255, 0, 0)
+            elif self.phase_mode == 1: # Pred vs Grass
+                x_data = config.stats_history["Grass Total"]
+                y_data = config.stats_history["Predator Count"]
+                x_label, y_label = "Grass", "Predator"
+                x_col, y_col = (0, 255, 0), (255, 0, 0)
+            else: # Prey vs Grass
+                x_data = config.stats_history["Grass Total"]
+                y_data = config.stats_history["Prey Count"]
+                x_label, y_label = "Grass", "Prey"
+                x_col, y_col = (0, 255, 0), (255, 255, 255)
+
             draw_phase_diagram(
                 self.stat_screen, 
                 self.event_chart_rect, 
-                config.stats_history["Prey Count"], 
-                config.stats_history["Predator Count"],
+                x_data, 
+                y_data,
+                x_label,
+                y_label,
+                x_col,
+                y_col,
                 mouse_pos=mouse_pos,
                 limit=config.PHASE_DIAGRAM_LIMIT
             )
