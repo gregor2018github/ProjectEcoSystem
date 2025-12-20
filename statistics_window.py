@@ -21,11 +21,22 @@ class Dropdown:
         for i in range(len(options)):
             self.option_rects.append(pygame.Rect(x, y + (i + 1) * height, width, height))
 
-    def draw(self, surface):
+    def draw(self, surface, mouse_pos):
         # Draw main button
-        color = (60, 100, 80) if not self.is_open else (40, 80, 60)
+        hover = self.rect.collidepoint(mouse_pos)
+        if self.is_open:
+            color = (40, 80, 60)
+        elif hover:
+            color = (80, 120, 100)
+        else:
+            color = (60, 100, 80)
+            
         pygame.draw.rect(surface, color, self.rect, border_radius=4)
-        pygame.draw.rect(surface, (200, 200, 200), self.rect, 1, border_radius=4)
+        
+        # Border
+        border_color = (255, 255, 255) if hover or self.is_open else (200, 200, 200)
+        border_width = 2 if hover or self.is_open else 1
+        pygame.draw.rect(surface, border_color, self.rect, border_width, border_radius=4)
         
         text = self.options[self.selected_index]
         text_surf = self.font.render(text, True, (255, 255, 255))
@@ -35,8 +46,13 @@ class Dropdown:
 
         if self.is_open:
             for i, rect in enumerate(self.option_rects):
-                pygame.draw.rect(surface, (50, 50, 50), rect)
-                pygame.draw.rect(surface, (200, 200, 200), rect, 1)
+                opt_hover = rect.collidepoint(mouse_pos)
+                opt_color = (70, 70, 70) if opt_hover else (50, 50, 50)
+                pygame.draw.rect(surface, opt_color, rect)
+                
+                opt_border_color = (255, 255, 255) if opt_hover else (200, 200, 200)
+                pygame.draw.rect(surface, opt_border_color, rect, 1)
+                
                 opt_text = self.options[i]
                 opt_surf = self.font.render(opt_text, True, (255, 255, 255))
                 opt_rect = opt_surf.get_rect(center=rect.center)
@@ -44,30 +60,38 @@ class Dropdown:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
+            from event_handler import play_click_sound
             if self.is_open:
                 # Check options
                 for i, rect in enumerate(self.option_rects):
                     if rect.collidepoint(event.pos):
                         self.selected_index = i
                         self.is_open = False
+                        play_click_sound()
                         return True
                 # Click outside or on main button to close
                 self.is_open = False
+                play_click_sound()
                 return True # Consumed click
             else:
                 if self.rect.collidepoint(event.pos):
                     self.is_open = True
+                    play_click_sound()
                     return True # Opened
+        return False
         return False
     
     def get_value(self):
         return self.options[self.selected_index]
 
 def get_limit_value(text_value):
-    if text_value == "MAX":
+    # Remove " Rounds" suffix if present
+    clean_value = text_value.replace(" Rounds", "")
+    
+    if clean_value == "MAX":
         return 1000000000 # 1 billion, effectively max
-    elif text_value.endswith("K"):
-        return int(text_value[:-1]) * 1000
+    elif clean_value.endswith("K"):
+        return int(clean_value[:-1]) * 1000
     return 20000
 
 ################################################
@@ -763,8 +787,8 @@ class StatisticsWindow:
                 draw_hover_line(self.stat_screen, self.pop_chart_rect, mouse_x, pop_series, limit=pop_limit)
             
             # Draw dropdowns (last to be on top)
-            self.pop_limit_dropdown.draw(self.stat_screen)
-            self.phase_limit_dropdown.draw(self.stat_screen)
+            self.pop_limit_dropdown.draw(self.stat_screen, mouse_pos)
+            self.phase_limit_dropdown.draw(self.stat_screen, mouse_pos)
 
             fps_label = self.font.render(f"FPS: {int(config.current_fps)}", True, (255,255,0))
             fps_x = config.XLIM - self.margin - fps_label.get_width()
