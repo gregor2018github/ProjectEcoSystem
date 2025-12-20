@@ -19,12 +19,11 @@ MINIMAP_BORDER_WIDTH = 2  # Border thickness
 MINIMAP_SHOW_DURATION = 2000  # How long minimap stays visible after movement stops (ms)
 MINIMAP_FADE_DURATION = 300  # Duration of fade in/out transition (ms)
 
-_minimap_last_active: int = 0  # Timestamp when camera last moved (for fade-out timing)
-_minimap_fade_in_start: int = -999999  # Timestamp when fade-in started (-999999 = not active)
-_minimap_is_fading_in: bool = False  # Whether we're currently in fade-in phase
-_minimap_alpha: float = 0.0  # Current alpha value (0.0 to 1.0) for smooth transitions
-_last_camera_x: float = 0.0  # Last camera position for change detection
+_minimap_last_active: int = 0  # Timestamp when camera last moved
+_minimap_alpha: float = 0.0    # Current alpha (0.0 to 1.0)
+_last_camera_x: float = 0.0    # Last camera position
 _last_camera_y: float = 0.0
+_last_minimap_tick: int = 0    # Last tick for dt calculation
 
 ################################################
 # Cached fonts (initialized lazily to avoid pygame init issues)
@@ -135,45 +134,31 @@ def draw_minimap(screen: pygame.Surface) -> None:
     Args:
         screen: The pygame surface to draw on.
     """
-    global _minimap_last_active, _minimap_fade_in_start, _minimap_is_fading_in, _minimap_alpha, _last_camera_x, _last_camera_y
+    global _minimap_last_active, _minimap_alpha, _last_camera_x, _last_camera_y, _last_minimap_tick
     
     current_time = pygame.time.get_ticks()
+    
+    # Initialize or calculate delta time
+    if _last_minimap_tick == 0:
+        _last_minimap_tick = current_time
+    dt = current_time - _last_minimap_tick
+    _last_minimap_tick = current_time
     
     # Check if camera has moved
     camera_moved = config.camera_x != _last_camera_x or config.camera_y != _last_camera_y
     if camera_moved:
-        # If minimap was fully hidden, start a new fade-in
-        if _minimap_alpha <= 0.0:
-            _minimap_fade_in_start = current_time
-            _minimap_is_fading_in = True
         _minimap_last_active = current_time
         _last_camera_x = config.camera_x
         _last_camera_y = config.camera_y
     
-    # Calculate target alpha based on state
-    time_since_fade_in_start = current_time - _minimap_fade_in_start
-    time_since_last_active = current_time - _minimap_last_active
+    # Target alpha: 1.0 if moving or recently moved, 0.0 otherwise
+    target_alpha = 1.0 if (current_time - _minimap_last_active) < MINIMAP_SHOW_DURATION else 0.0
     
-    if _minimap_is_fading_in:
-        # Currently fading in - this takes priority over everything
-        if time_since_fade_in_start < MINIMAP_FADE_DURATION:
-            target_alpha = time_since_fade_in_start / MINIMAP_FADE_DURATION
-        else:
-            # Fade-in complete
-            target_alpha = 1.0
-            _minimap_is_fading_in = False
-    elif time_since_last_active < MINIMAP_SHOW_DURATION:
-        # Fully visible (recently moved)
-        target_alpha = 1.0
-    elif time_since_last_active < MINIMAP_SHOW_DURATION + MINIMAP_FADE_DURATION:
-        # Fading out (after movement stopped)
-        fade_progress = (time_since_last_active - MINIMAP_SHOW_DURATION) / MINIMAP_FADE_DURATION
-        target_alpha = 1.0 - fade_progress
-    else:
-        # Fully hidden
-        target_alpha = 0.0
-    
-    _minimap_alpha = max(0.0, min(1.0, target_alpha))
+    # Smoothly transition alpha towards target
+    if _minimap_alpha < target_alpha:
+        _minimap_alpha = min(target_alpha, _minimap_alpha + dt / MINIMAP_FADE_DURATION)
+    elif _minimap_alpha > target_alpha:
+        _minimap_alpha = max(target_alpha, _minimap_alpha - dt / MINIMAP_FADE_DURATION)
     
     # Don't draw if fully transparent
     if _minimap_alpha <= 0.0:
