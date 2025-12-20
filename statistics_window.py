@@ -67,6 +67,8 @@ class StatisticsWindow:
         Displays population and event charts, handles user input,
         and closes when the user presses Escape or clicks the Close button.
         """
+        from event_handler import play_click_sound
+
         def draw_line_chart(
             surface: pygame.Surface,
             rect: pygame.Rect,
@@ -380,14 +382,20 @@ class StatisticsWindow:
 
         while self.running_stats:
             for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    self.running_stats = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.running_stats = False
+                    elif event.key == pygame.K_SPACE:
+                        self.simulation_running = not self.simulation_running
+                        play_click_sound()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.close_rect.collidepoint(event.pos):
                         register_button_click(self.close_rect)
+                        play_click_sound()
                         self.running_stats = False
                     elif self.toggle_sim_rect.collidepoint(event.pos):
                         register_button_click(self.toggle_sim_rect)
+                        play_click_sound()
                         self.simulation_running = not self.simulation_running
             
             if self.simulation_running:
