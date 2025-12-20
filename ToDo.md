@@ -1,7 +1,9 @@
 ### Todo
 
-- [ ] Add FPS counter
-- [ ] Repair FPS limits, currently settings value is non functional
+
+- [ ] more options to statistics window
+  - [ ] dropdown to select refresh rate of two graphs
+  - [ ] dropdown to select max number of points shown in graphs
 - [ ] Add a start screen where you can change settings and launch the simulation
 - [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [ ] Animals need new mating state
@@ -9,10 +11,17 @@
 - [ ] Add heritage of traits from parents to children
   - [ ] give every induvidual unique properties instead of hardcoded values from settings
   - [ ] add mixing algorithm (distribution of finite amount of points between different traits)
-- [ ] Improve performance by only considering other animals with low distances instead of every animal
+
  
 ### Done ✓
 
+- [x] Add FPS counter
+- [x] Repair FPS limits, currently settings value is non functional
+- [x] Improve performance of phase diagram by limiting number of points drawn
+- [x] Improve performance of population graph by limiting number of points drawn
+- [x] Add phase diagram to statistics window
+- [x] Add basic information table to statistics window
+- [x] Improve performance by using a spatial hash grid for animal movements
 - [x] Improve the visuals of the settings screen
   - [x] center the settings window on the screen
   - [x] center the buttons within the settings window
