@@ -476,11 +476,13 @@ class StatisticsWindow:
                 ]
                 draw_hover_line(self.stat_screen, self.pop_chart_rect, mouse_x, pop_series)
             
-            rounds_label = self.font.render(f"Rounds: {config.rounds_passed}", True, (255,255,0))
-            self.stat_screen.blit(rounds_label, (self.margin, config.YLIM - self.margin - config.BUTTON_HEIGHT - 25))
-            
             fps_label = self.font.render(f"FPS: {int(config.current_fps)}", True, (255,255,0))
-            self.stat_screen.blit(fps_label, (self.margin + rounds_label.get_width() + 20, config.YLIM - self.margin - config.BUTTON_HEIGHT - 25))
+            fps_x = config.XLIM - self.margin - fps_label.get_width()
+            self.stat_screen.blit(fps_label, (fps_x, self.margin - config.BUTTON_HEIGHT))
+            
+            rounds_label = self.font.render(f"Rounds: {config.rounds_passed}", True, (255,255,0))
+            rounds_x = fps_x - 20 - rounds_label.get_width()
+            self.stat_screen.blit(rounds_label, (rounds_x, self.margin - config.BUTTON_HEIGHT))
             
             draw_button(self.stat_screen, self.close_rect, "Close", self.font, mouse_pos)
             
