@@ -68,6 +68,10 @@ class StatisticsWindow:
         and closes when the user presses Escape or clicks the Close button.
         """
         from event_handler import play_click_sound
+        
+        clock = pygame.time.Clock()
+        fps_frame_count = 0
+        fps_timer = 0.0
 
         def draw_line_chart(
             surface: pygame.Surface,
@@ -363,9 +367,10 @@ class StatisticsWindow:
             
             line_height = 20
             
-            # Center the table with a fixed width
+            # Align the table to the left with a margin
             table_width = 300
-            start_x = rect.centerx - table_width // 2
+            margin = 20
+            start_x = rect.left + margin
             start_y = rect.top + 20
             
             col1_x = start_x
@@ -381,6 +386,17 @@ class StatisticsWindow:
                 start_y += line_height
 
         while self.running_stats:
+            # Track frame time for FPS calculation
+            dt = clock.get_time() / 1000.0
+            fps_frame_count += 1
+            fps_timer += dt
+            
+            # Update displayed FPS every 2 seconds
+            if fps_timer >= config.FPS_UPDATE_INTERVAL:
+                config.current_fps = fps_frame_count / fps_timer
+                fps_frame_count = 0
+                fps_timer = 0.0
+
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -462,12 +478,17 @@ class StatisticsWindow:
             
             rounds_label = self.font.render(f"Rounds: {config.rounds_passed}", True, (255,255,0))
             self.stat_screen.blit(rounds_label, (self.margin, config.YLIM - self.margin - config.BUTTON_HEIGHT - 25))
+            
+            fps_label = self.font.render(f"FPS: {int(config.current_fps)}", True, (255,255,0))
+            self.stat_screen.blit(fps_label, (self.margin + rounds_label.get_width() + 20, config.YLIM - self.margin - config.BUTTON_HEIGHT - 25))
+            
             draw_button(self.stat_screen, self.close_rect, "Close", self.font, mouse_pos)
             
             toggle_text = "Stop Simulation" if self.simulation_running else "Start Simulation"
             draw_button(self.stat_screen, self.toggle_sim_rect, toggle_text, self.font, mouse_pos)
 
             pygame.display.flip()
+            clock.tick(config.FPS)
             
         # Restore main screen
         pygame.display.set_mode((config.XLIM, config.YLIM))
