@@ -213,11 +213,11 @@ class StatisticsWindow:
                     pygame.draw.circle(surface, (255, 255, 0), (int(cx), int(cy)), 6, 2)
                     
                     # Prepare text
-                    ratio = (val_x / val_y * 100) if val_y != 0 else 0
+                    ratio = (val_x / val_y) if val_y != 0 else 0
                     lines = [
                         f"Prey: {int(val_x)}",
                         f"Pred: {int(val_y)}",
-                        f"Prey per Pred: {ratio:.1f}%"
+                        f"Prey per Pred: {ratio:.2f}" if val_y != 0 else "Prey per Pred: Infinity"
                     ]
                     
                     # Calculate box size
@@ -335,7 +335,7 @@ class StatisticsWindow:
             # Calculate stats
             prey_count = config.stats_history["Prey Count"][-1] if config.stats_history["Prey Count"] else 0
             pred_count = config.stats_history["Predator Count"][-1] if config.stats_history["Predator Count"] else 0
-            grass_count = config.stats_history["Grass Total"][-1] if config.stats_history["Grass Total"] else 0
+            grass_count = round(float(config.stats_history["Grass Total"][-1]) / 1000) if config.stats_history["Grass Total"] else 0
             
             max_prey = max(config.stats_history["Prey Count"]) if config.stats_history["Prey Count"] else 0
             max_pred = max(config.stats_history["Predator Count"]) if config.stats_history["Predator Count"] else 0
@@ -350,7 +350,7 @@ class StatisticsWindow:
                 ("-" * 20, "-" * 10),
                 ("Current Prey", f"{prey_count}"),
                 ("Current Predator", f"{pred_count}"),
-                ("Current Grass", f"{grass_count}"),
+                ("Current Grass", f"{grass_count} K"),
                 ("", ""),
                 ("Max Prey", f"{max_prey}"),
                 ("Max Predator", f"{max_pred}"),
