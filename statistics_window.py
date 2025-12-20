@@ -32,12 +32,12 @@ class StatisticsWindow:
         close_rect: Rectangle defining the close button area.
     """
     
-    def __init__(self, predators: list[Predator], preys: list[Prey], grass: GrassArray) -> None:
+    def __init__(self, predators: list[Predator], preys: list[Prey], grass: GrassArray, simulation_running: bool) -> None:
         """Initialize the statistics window with charts and UI elements."""
         self.predators = predators
         self.preys = preys
         self.grass = grass
-        self.simulation_running = False
+        self.simulation_running = simulation_running
 
         self.stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
         pygame.display.set_caption("Statistics")
@@ -85,7 +85,7 @@ class StatisticsWindow:
         self.phase_axis_values = None
         self.last_phase_mode = -1
 
-    def run(self) -> None:
+    def run(self) -> bool:
         """Run the statistics window event loop.
         
         Displays population and event charts, handles user input,
@@ -674,3 +674,4 @@ class StatisticsWindow:
         # Restore main screen
         pygame.display.set_mode((config.XLIM, config.YLIM))
         pygame.display.set_caption("Simulation")
+        return self.simulation_running
