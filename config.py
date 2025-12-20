@@ -73,11 +73,17 @@ STATS_X_OFFSET = 20
 STATS_Y_OFFSET = 20
 STATS_LINE_HEIGHT = 20
 
+UPDATE_SPEED_POPULATION_GRAPH = 30
+UPDATE_SPEED_PHASE_GRAPH = 30
+UPDATE_SPEED_TABLE = 50
+
+PHASE_DIAGRAM_LIMIT = 20000
+
 ################################################
 # Simulation
 ################################################
     
-FPS = 120
+FPS = 120 # Maximum allowed frames per second
 
 # FPS counter (updates every 2 seconds for lightweight performance)
 current_fps = 0.0  # Displayed FPS value
@@ -107,9 +113,6 @@ BUTTON_HEIGHT = 30
 BUTTON_X_OFFSET = 100
 BUTTON_Y_START = 10
 BUTTON_Y_GAP = 40
-
-# Statistics Window Constants
-PHASE_DIAGRAM_LIMIT = 20000
 
 ################################################
 # Button click effects

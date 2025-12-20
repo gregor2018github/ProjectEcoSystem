@@ -70,6 +70,21 @@ class StatisticsWindow:
         for i in range(3):
             self.mode_btns.append(pygame.Rect(self.event_chart_rect.right - (3-i) * (btn_w + 5), bottom_y - btn_h - 5, btn_w, btn_h))
 
+        # Surfaces for caching charts and table
+        self.pop_chart_surf = pygame.Surface((self.pop_chart_rect.width, self.pop_chart_rect.height))
+        self.phase_diagram_surf = pygame.Surface((self.event_chart_rect.width, self.event_chart_rect.height))
+        self.stats_table_surf = pygame.Surface((self.stats_table_rect.width, self.stats_table_rect.height))
+        
+        self.last_pop_update = -1
+        self.last_phase_update = -1
+        self.last_table_update = -1
+        
+        # Cache for phase diagram hover
+        self.phase_points = []
+        self.phase_data_points = []
+        self.phase_axis_values = None
+        self.last_phase_mode = -1
+
     def run(self) -> None:
         """Run the statistics window event loop.
         
@@ -124,9 +139,8 @@ class StatisticsWindow:
             y_label: str,
             x_color: tuple[int, int, int],
             y_color: tuple[int, int, int],
-            mouse_pos: tuple[int, int] | None = None,
             limit: int = config.PHASE_DIAGRAM_LIMIT
-        ) -> None:
+        ) -> tuple[list[tuple[float, float]], list[tuple[float, float]], tuple[float, float, float, float]]:
             """Draw a phase diagram for the recent history.
             
             Args:
@@ -138,18 +152,17 @@ class StatisticsWindow:
                 y_label: Label for the Y axis.
                 x_color: Color for the X axis labels.
                 y_color: Color for the Y axis labels.
-                mouse_pos: Current mouse position for hover effects.
                 limit: Number of recent data points to show.
             """
             if len(x_series) < 2 or len(y_series) < 2:
-                return
+                return [], []
             
             # Slice data to the limit
             start_idx = max(0, len(x_series) - limit)
             xs = x_series[start_idx:]
             ys = y_series[start_idx:]
             
-            if len(xs) < 2: return
+            if len(xs) < 2: return [], []
 
             # Determine scaling range
             min_x, max_x = float(min(xs)), float(max(xs))
@@ -189,7 +202,22 @@ class StatisticsWindow:
             if points:
                 pygame.draw.circle(surface, (255, 255, 255), (float(points[-1][0]), float(points[-1][1])), 4)
                 
-            # Draw Axis Labels (Min/Max)
+            return points, data_points, (min_x, max_x, min_y, max_y)
+
+        def draw_phase_labels(
+            surface: pygame.Surface,
+            rect: pygame.Rect,
+            x_label: str,
+            y_label: str,
+            x_color: tuple[int, int, int],
+            y_color: tuple[int, int, int],
+            axis_values: tuple[float, float, float, float] | None
+        ) -> None:
+            """Draw axis labels and titles for the phase diagram."""
+            if axis_values is None:
+                return
+                
+            min_x, max_x, min_y, max_y = axis_values
             font = self.font
             
             # X Axis Labels
@@ -212,65 +240,81 @@ class StatisticsWindow:
             y_title_rot = pygame.transform.rotate(y_title_surf, 90)
             surface.blit(y_title_rot, (rect.left - 30, rect.centery - y_title_rot.get_height()//2))
 
-            # Hover logic
-            if mouse_pos and rect.collidepoint(mouse_pos):
-                # Find closest point
-                min_dist = float('inf')
-                closest_idx = -1
-                mx, my = mouse_pos
+        def draw_phase_hover(
+            surface: pygame.Surface,
+            rect: pygame.Rect,
+            mouse_pos: tuple[int, int],
+            points: list[tuple[float, float]],
+            data_points: list[tuple[float, float]],
+            x_label: str,
+            y_label: str
+        ) -> None:
+            """Draw hover information for the phase diagram."""
+            if not points or not rect.collidepoint(mouse_pos):
+                return
                 
-                for i, (px, py) in enumerate(points):
-                    dist = ((px - mx)**2 + (py - my)**2)**0.5
-                    if dist < min_dist:
-                        min_dist = dist
-                        closest_idx = i
+            # Find closest point
+            min_dist = float('inf')
+            closest_idx = -1
+            mx, my = mouse_pos
+            
+            for i, (px, py) in enumerate(points):
+                # Convert local point to global coordinates
+                gpx = px + rect.left
+                gpy = py + rect.top
+                dist = ((gpx - mx)**2 + (gpy - my)**2)**0.5
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_idx = i
+            
+            if closest_idx != -1 and min_dist < 30: # Threshold
+                # Draw popup
+                px, py = points[closest_idx]
+                cx = px + rect.left
+                cy = py + rect.top
+                val_x, val_y = data_points[closest_idx]
                 
-                if closest_idx != -1 and min_dist < 30: # Threshold
-                    # Draw popup
-                    cx, cy = points[closest_idx]
-                    val_x, val_y = data_points[closest_idx]
-                    
-                    # Draw highlight circle
-                    pygame.draw.circle(surface, (255, 255, 0), (int(cx), int(cy)), 6, 2)
-                    
-                    # Prepare text
-                    ratio = (val_x / val_y) if val_y != 0 else 0
-                    lines = [
-                        f"{x_label}: {int(val_x)}",
-                        f"{y_label}: {int(val_y)}",
-                    ]
-                    if x_label == "Prey" and y_label == "Predator":
-                        lines.append(f"Prey per Pred: {ratio:.2f}" if val_y != 0 else "Prey per Pred: Infinity")
-                    elif x_label == "Grass" and y_label == "Predator":
-                        lines.append(f"Grass per Pred: {val_x/val_y:.1f}" if val_y != 0 else "Grass per Pred: Infinity")
-                    elif x_label == "Grass" and y_label == "Prey":
-                        lines.append(f"Grass per Prey: {val_x/val_y:.1f}" if val_y != 0 else "Grass per Prey: Infinity")
-                    
-                    # Calculate box size
-                    box_w = 0
-                    box_h = len(lines) * 20 + 10
-                    surfs = []
-                    for line in lines:
-                        s = self.font.render(line, True, (255, 255, 255))
-                        surfs.append(s)
-                        box_w = max(box_w, s.get_width())
-                    box_w += 20
-                    
-                    # Position box near mouse but keep in bounds
-                    box_x = mx + 15
-                    box_y = my + 15
-                    if box_x + box_w > rect.right: box_x = mx - box_w - 15
-                    if box_y + box_h > rect.bottom: box_y = my - box_h - 15
-                    
-                    # Draw box
-                    pygame.draw.rect(surface, (40, 40, 40), (box_x, box_y, box_w, box_h))
-                    pygame.draw.rect(surface, (100, 100, 100), (box_x, box_y, box_w, box_h), 1)
-                    
-                    # Draw text
-                    curr_y = box_y + 5
-                    for s in surfs:
-                        surface.blit(s, (box_x + 10, curr_y))
-                        curr_y += 20
+                # Draw highlight circle
+                pygame.draw.circle(surface, (255, 255, 0), (int(cx), int(cy)), 6, 2)
+                
+                # Prepare text
+                ratio = (val_x / val_y) if val_y != 0 else 0
+                lines = [
+                    f"{x_label}: {int(val_x)}",
+                    f"{y_label}: {int(val_y)}",
+                ]
+                if x_label == "Prey" and y_label == "Predator":
+                    lines.append(f"Prey per Pred: {ratio:.2f}" if val_y != 0 else "Prey per Pred: Infinity")
+                elif x_label == "Grass" and y_label == "Predator":
+                    lines.append(f"Grass per Pred: {val_x/val_y:.1f}" if val_y != 0 else "Grass per Pred: Infinity")
+                elif x_label == "Grass" and y_label == "Prey":
+                    lines.append(f"Grass per Prey: {val_x/val_y:.1f}" if val_y != 0 else "Grass per Prey: Infinity")
+                
+                # Calculate box size
+                box_w = 0
+                box_h = len(lines) * 20 + 10
+                surfs = []
+                for line in lines:
+                    s = self.font.render(line, True, (255, 255, 255))
+                    surfs.append(s)
+                    box_w = max(box_w, s.get_width())
+                box_w += 20
+                
+                # Position box near mouse but keep in bounds
+                box_x = mx + 15
+                box_y = my + 15
+                if box_x + box_w > rect.right: box_x = mx - box_w - 15
+                if box_y + box_h > rect.bottom: box_y = my - box_h - 15
+                
+                # Draw box
+                pygame.draw.rect(surface, (40, 40, 40), (box_x, box_y, box_w, box_h))
+                pygame.draw.rect(surface, (100, 100, 100), (box_x, box_y, box_w, box_h), 1)
+                
+                # Draw text
+                curr_y = box_y + 5
+                for s in surfs:
+                    surface.blit(s, (box_x + 10, curr_y))
+                    curr_y += 20
         
         def get_value_at_x(series: list[int | float], rect: pygame.Rect, mouse_x: int) -> float | None:
             """Get the interpolated value from a series at a given x position.
@@ -447,9 +491,69 @@ class StatisticsWindow:
                 update_simulation(self.predators, self.preys, self.grass)
             
             mouse_pos = pygame.mouse.get_pos()
-            
+
+            # Determine series and labels based on mode for phase diagram
+            if self.phase_mode == 0: # Pred vs Prey
+                x_data = config.stats_history["Prey Count"]
+                y_data = config.stats_history["Predator Count"]
+                x_label, y_label = "Prey", "Predator"
+                x_col, y_col = (255, 255, 255), (255, 0, 0)
+            elif self.phase_mode == 1: # Pred vs Grass
+                x_data = config.stats_history["Grass Total"]
+                y_data = config.stats_history["Predator Count"]
+                x_label, y_label = "Grass", "Predator"
+                x_col, y_col = (0, 255, 0), (255, 0, 0)
+            else: # Prey vs Grass
+                x_data = config.stats_history["Grass Total"]
+                y_data = config.stats_history["Prey Count"]
+                x_label, y_label = "Grass", "Prey"
+                x_col, y_col = (0, 255, 0), (255, 255, 255)
+
+            # Update population chart surface
+            if config.rounds_passed - self.last_pop_update >= config.UPDATE_SPEED_POPULATION_GRAPH or self.last_pop_update == -1:
+                self.pop_chart_surf.fill((30, 30, 30))
+                temp_rect = pygame.Rect(0, 0, self.pop_chart_rect.width, self.pop_chart_rect.height)
+                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Prey Count"], (255,255,255))
+                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Predator Count"], (255,0,0))
+                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Grass Total"], (0,255,0))
+                self.last_pop_update = config.rounds_passed
+
+            # Update phase diagram surface
+            if (config.rounds_passed - self.last_phase_update >= config.UPDATE_SPEED_PHASE_GRAPH or 
+                self.last_phase_update == -1 or 
+                self.last_phase_mode != self.phase_mode):
+                
+                self.phase_diagram_surf.fill((30, 30, 30))
+                temp_rect = pygame.Rect(0, 0, self.event_chart_rect.width, self.event_chart_rect.height)
+                self.phase_points, self.phase_data_points, self.phase_axis_values = draw_phase_diagram(
+                    self.phase_diagram_surf, 
+                    temp_rect, 
+                    x_data, 
+                    y_data,
+                    x_label,
+                    y_label,
+                    x_col,
+                    y_col,
+                    limit=config.PHASE_DIAGRAM_LIMIT
+                )
+                self.last_phase_update = config.rounds_passed
+                self.last_phase_mode = self.phase_mode
+
+            # Update statistics table surface
+            if config.rounds_passed - self.last_table_update >= config.UPDATE_SPEED_TABLE or self.last_table_update == -1:
+                self.stats_table_surf.fill((30, 30, 30))
+                temp_rect = pygame.Rect(0, 0, self.stats_table_rect.width, self.stats_table_rect.height)
+                draw_statistics_table(self.stats_table_surf, temp_rect)
+                self.last_table_update = config.rounds_passed
+
             self.stat_screen.fill((30, 30, 30))
             
+            # Blit cached surfaces
+            self.stat_screen.blit(self.pop_chart_surf, self.pop_chart_rect)
+            self.stat_screen.blit(self.phase_diagram_surf, self.event_chart_rect)
+            self.stat_screen.blit(self.stats_table_surf, self.stats_table_rect)
+            
+            # Draw borders
             pygame.draw.rect(self.stat_screen, (200,200,200), self.pop_chart_rect, 1)
             pygame.draw.rect(self.stat_screen, (200,200,200), self.event_chart_rect, 1)
             pygame.draw.rect(self.stat_screen, (200,200,200), self.stats_table_rect, 1)
@@ -496,41 +600,27 @@ class StatisticsWindow:
                     # Add a white border for the active button
                     pygame.draw.rect(self.stat_screen, (255, 255, 255), btn_rect, 2, border_radius=8)
 
-            draw_line_chart(self.stat_screen, self.pop_chart_rect, config.stats_history["Prey Count"], (255,255,255))
-            draw_line_chart(self.stat_screen, self.pop_chart_rect, config.stats_history["Predator Count"], (255,0,0))
-            draw_line_chart(self.stat_screen, self.pop_chart_rect, config.stats_history["Grass Total"], (0,255,0))
-            
-            # Determine series and labels based on mode
-            if self.phase_mode == 0: # Pred vs Prey
-                x_data = config.stats_history["Prey Count"]
-                y_data = config.stats_history["Predator Count"]
-                x_label, y_label = "Prey", "Predator"
-                x_col, y_col = (255, 255, 255), (255, 0, 0)
-            elif self.phase_mode == 1: # Pred vs Grass
-                x_data = config.stats_history["Grass Total"]
-                y_data = config.stats_history["Predator Count"]
-                x_label, y_label = "Grass", "Predator"
-                x_col, y_col = (0, 255, 0), (255, 0, 0)
-            else: # Prey vs Grass
-                x_data = config.stats_history["Grass Total"]
-                y_data = config.stats_history["Prey Count"]
-                x_label, y_label = "Grass", "Prey"
-                x_col, y_col = (0, 255, 0), (255, 255, 255)
-
-            draw_phase_diagram(
-                self.stat_screen, 
-                self.event_chart_rect, 
-                x_data, 
-                y_data,
+            # Draw phase diagram labels
+            draw_phase_labels(
+                self.stat_screen,
+                self.event_chart_rect,
                 x_label,
                 y_label,
                 x_col,
                 y_col,
-                mouse_pos=mouse_pos,
-                limit=config.PHASE_DIAGRAM_LIMIT
+                self.phase_axis_values
             )
-            
-            draw_statistics_table(self.stat_screen, self.stats_table_rect)
+
+            # Draw phase diagram hover (interactive)
+            draw_phase_hover(
+                self.stat_screen,
+                self.event_chart_rect,
+                mouse_pos,
+                self.phase_points,
+                self.phase_data_points,
+                x_label,
+                y_label
+            )
             
             # Draw hover lines with values when mouse is over a chart
             mouse_x, mouse_y = mouse_pos
