@@ -101,7 +101,8 @@ class StatisticsWindow:
             surface: pygame.Surface,
             rect: pygame.Rect,
             series: list[int | float],
-            color: tuple[int, int, int]
+            color: tuple[int, int, int],
+            limit: int = config.POPULATION_GRAPH_LIMIT
         ) -> None:
             """Draw a line chart on the given surface.
             
@@ -110,18 +111,27 @@ class StatisticsWindow:
                 rect: The rectangle defining the chart area.
                 series: List of numeric values to plot.
                 color: RGB tuple for the line color.
+                limit: Maximum number of data points to display.
             """
             if len(series) < 2:
                 return
+            
+            # Slice data to the limit
+            start_idx = max(0, len(series) - limit)
+            data_slice = series[start_idx:]
+            
+            if len(data_slice) < 2:
+                return
+
             # Scale series within chart rect
-            min_val = float(min(series))
-            max_val = float(max(series))
+            min_val = float(min(data_slice))
+            max_val = float(max(data_slice))
             if max_val == min_val:
                 max_val += 1
             points = []
-            n = len(series)
+            n = len(data_slice)
             step = rect.width / (n - 1)
-            for i, val in enumerate(series):
+            for i, val in enumerate(data_slice):
                 # Map value to y coordinate (invert as y increases downwards)
                 # Convert to float to handle NumPy types
                 val_f = float(val)
@@ -347,7 +357,8 @@ class StatisticsWindow:
             surface: pygame.Surface,
             rect: pygame.Rect,
             mouse_x: int,
-            series_list: list[tuple[list[int | float], tuple[int, int, int], str]]
+            series_list: list[tuple[list[int | float], tuple[int, int, int], str]],
+            limit: int = config.POPULATION_GRAPH_LIMIT
         ) -> None:
             """Draw a vertical hover line and display values at intersection points.
             
@@ -356,6 +367,7 @@ class StatisticsWindow:
                 rect: The rectangle defining the chart area.
                 mouse_x: The x coordinate of the mouse.
                 series_list: List of tuples (series_data, color, label).
+                limit: Maximum number of data points to display.
             """
             # Draw vertical line
             pygame.draw.line(surface, (255, 255, 0), (mouse_x, rect.top), (mouse_x, rect.bottom), 1)
@@ -365,11 +377,18 @@ class StatisticsWindow:
             round_num = None
             for series, _, _ in series_list:
                 if len(series) >= 2:
-                    n = len(series)
+                    # Slice series to match chart display
+                    start_idx = max(0, len(series) - limit)
+                    sliced_series = series[start_idx:]
+                    
+                    n = len(sliced_series)
+                    if n < 2: continue
+                    
                     relative_x = mouse_x - rect.left
                     index_f = relative_x / rect.width * (n - 1)
-                    round_num = int(round(index_f))
-                    round_num = max(0, min(round_num, n - 1))
+                    idx = int(round(index_f))
+                    idx = max(0, min(idx, n - 1))
+                    round_num = start_idx + idx
                     break
             
             # Calculate and display values
@@ -386,7 +405,11 @@ class StatisticsWindow:
                 y_offset += 18
             
             for series, color, label in series_list:
-                val = get_value_at_x(series, rect, mouse_x)
+                # Slice series to match chart display
+                start_idx = max(0, len(series) - limit)
+                sliced_series = series[start_idx:]
+                
+                val = get_value_at_x(sliced_series, rect, mouse_x)
                 if val is not None:
                     if val == int(val):
                         text = f"{label}: {int(val)}"

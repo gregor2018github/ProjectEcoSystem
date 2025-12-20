@@ -78,6 +78,7 @@ UPDATE_SPEED_PHASE_GRAPH = 30
 UPDATE_SPEED_TABLE = 50
 
 PHASE_DIAGRAM_LIMIT = 20000
+POPULATION_GRAPH_LIMIT = 20000
 
 ################################################
 # Simulation
