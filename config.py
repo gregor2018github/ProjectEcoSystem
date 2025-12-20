@@ -108,6 +108,9 @@ BUTTON_X_OFFSET = 100
 BUTTON_Y_START = 10
 BUTTON_Y_GAP = 40
 
+# Statistics Window Constants
+PHASE_DIAGRAM_LIMIT = 20000
+
 ################################################
 # Button click effects
 ################################################

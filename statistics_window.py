@@ -112,7 +112,7 @@ class StatisticsWindow:
             x_series: list[int | float],
             y_series: list[int | float],
             mouse_pos: tuple[int, int] | None = None,
-            limit: int = 20000
+            limit: int = config.PHASE_DIAGRAM_LIMIT
         ) -> None:
             """Draw a phase diagram (Prey vs Predator) for the recent history.
             
@@ -442,7 +442,7 @@ class StatisticsWindow:
                 x_offset += part.get_width()
 
             events_header_parts = [
-                ( "Phase Diagram: Predator vs Prey (Last 20000 Rounds)", (0, 200, 255) ),
+                ( f"Phase Diagram: Predator vs Prey (Last {config.PHASE_DIAGRAM_LIMIT} Rounds)", (0, 200, 255) ),
             ]
             x_offset = self.event_chart_rect.left
             y_offset = self.event_chart_rect.top - 30
@@ -461,7 +461,7 @@ class StatisticsWindow:
                 config.stats_history["Prey Count"], 
                 config.stats_history["Predator Count"],
                 mouse_pos=mouse_pos,
-                limit=20000
+                limit=config.PHASE_DIAGRAM_LIMIT
             )
             
             draw_statistics_table(self.stat_screen, self.stats_table_rect)
