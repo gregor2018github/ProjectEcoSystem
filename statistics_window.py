@@ -180,7 +180,8 @@ class StatisticsWindow:
             self.pop_chart_rect.top - dropdown_height - 5,
             dropdown_width,
             dropdown_height,
-            ["20K Rounds", "50K Rounds", "MAX Rounds"]
+            ["5K Rounds", "10K Rounds", "20K Rounds", "50K Rounds", "MAX Rounds"],
+            default_index=2
         )
         
         # Phase chart dropdown
@@ -191,7 +192,8 @@ class StatisticsWindow:
             bottom_y - btn_h - 5,
             dropdown_width,
             dropdown_height,
-            ["20K Rounds", "50K Rounds", "MAX Rounds"]
+            ["5K Rounds", "10K Rounds", "20K Rounds", "50K Rounds", "MAX Rounds"],
+            default_index=2
         )
         
         self.last_pop_limit = get_limit_value(self.pop_limit_dropdown.get_value())
