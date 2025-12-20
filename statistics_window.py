@@ -6,6 +6,9 @@ from __future__ import annotations
 import pygame
 import config
 from ui import draw_button, register_button_click
+from simulation import update_simulation
+from animals import Predator, Prey
+from grass_array import GrassArray
 
 ################################################
 # Statistics Window Class
@@ -29,8 +32,13 @@ class StatisticsWindow:
         close_rect: Rectangle defining the close button area.
     """
     
-    def __init__(self) -> None:
+    def __init__(self, predators: list[Predator], preys: list[Prey], grass: GrassArray) -> None:
         """Initialize the statistics window with charts and UI elements."""
+        self.predators = predators
+        self.preys = preys
+        self.grass = grass
+        self.simulation_running = False
+
         self.stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
         pygame.display.set_caption("Statistics")
         self.font = pygame.font.Font(None, 20)
@@ -49,6 +57,9 @@ class StatisticsWindow:
         self.stats_table_rect = pygame.Rect(self.margin + half_width + self.margin, bottom_y, half_width, self.chart_height)
         
         self.close_rect = pygame.Rect(config.XLIM - self.margin - config.BUTTON_WIDTH, config.YLIM - self.margin - config.BUTTON_HEIGHT + 10, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        
+        toggle_width = 140
+        self.toggle_sim_rect = pygame.Rect(self.close_rect.left - toggle_width - 10, self.close_rect.top, toggle_width, config.BUTTON_HEIGHT)
 
     def run(self) -> None:
         """Run the statistics window event loop.
@@ -375,6 +386,12 @@ class StatisticsWindow:
                     if self.close_rect.collidepoint(event.pos):
                         register_button_click(self.close_rect)
                         self.running_stats = False
+                    elif self.toggle_sim_rect.collidepoint(event.pos):
+                        register_button_click(self.toggle_sim_rect)
+                        self.simulation_running = not self.simulation_running
+            
+            if self.simulation_running:
+                update_simulation(self.predators, self.preys, self.grass)
             
             mouse_pos = pygame.mouse.get_pos()
             
@@ -438,6 +455,10 @@ class StatisticsWindow:
             rounds_label = self.font.render(f"Rounds: {config.rounds_passed}", True, (255,255,0))
             self.stat_screen.blit(rounds_label, (self.margin, config.YLIM - self.margin - config.BUTTON_HEIGHT - 25))
             draw_button(self.stat_screen, self.close_rect, "Close", self.font, mouse_pos)
+            
+            toggle_text = "Stop Simulation" if self.simulation_running else "Start Simulation"
+            draw_button(self.stat_screen, self.toggle_sim_rect, toggle_text, self.font, mouse_pos)
+
             pygame.display.flip()
             
         # Restore main screen

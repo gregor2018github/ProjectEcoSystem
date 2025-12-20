@@ -214,7 +214,7 @@ def process_event(
         elif stats_button_rect.collidepoint(mouse_pos):
             register_button_click(stats_button_rect)
             play_click_sound()
-            stats_win = StatisticsWindow()
+            stats_win = StatisticsWindow(predators, preys, grass)
             stats_win.run()
             pygame.display.set_caption("Simulation")
             stopped = False # Resume simulation rendering
