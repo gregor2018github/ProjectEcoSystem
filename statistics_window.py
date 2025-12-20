@@ -435,7 +435,7 @@ class StatisticsWindow:
                 ( ")", (255,255,255) ),
             ]
             x_offset = self.pop_chart_rect.left
-            y_offset = self.pop_chart_rect.top - 30
+            y_offset = self.pop_chart_rect.top - 15
             for text, color in header_parts:
                 part = self.font.render(text, True, color)
                 self.stat_screen.blit(part, (x_offset, y_offset))
@@ -445,7 +445,7 @@ class StatisticsWindow:
                 ( f"Phase Diagram: Predator vs Prey (Last {config.PHASE_DIAGRAM_LIMIT} Rounds)", (0, 200, 255) ),
             ]
             x_offset = self.event_chart_rect.left
-            y_offset = self.event_chart_rect.top - 30
+            y_offset = self.event_chart_rect.top - 15
             for text, color in events_header_parts:
                 part = self.font.render(text, True, color)
                 self.stat_screen.blit(part, (x_offset, y_offset))
