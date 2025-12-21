@@ -1,10 +1,15 @@
 ### Todo
 
-
-- [ ] more options to statistics window
-  - [ ] dropdown to select refresh rate of two graphs
-  - [ ] dropdown to select max number of points shown in graphs
 - [ ] Add a start screen where you can change settings and launch the simulation
+- [ ] Add more information to the table in the statistics window
+  - [ ] Total current population (predators and preys)
+  - [ ] Average age of animals (separately for predators and preys)
+  - [ ] Average energy levels (separately for predators and preys)
+  - [ ] Animals hunted down in the last 100 rounds
+  - [ ] Animals died of starvation in the last 100 rounds
+  - [ ] Animals died of old age in the last 100 rounds
+  - [ ] Total animals born in the last 100 rounds
+
 - [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [ ] Animals need new mating state
   - [ ] Keep track of generational statistics
@@ -15,6 +20,8 @@
  
 ### Done ✓
 
+- [x] more options to statistics window
+  - [x] dropdown to select max number of points shown in graphs
 - [x] Add FPS counter
 - [x] Repair FPS limits, currently settings value is non functional
 - [x] Improve performance of phase diagram by limiting number of points drawn
