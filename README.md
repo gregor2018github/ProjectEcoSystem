@@ -21,3 +21,4 @@ A predator-prey ecosystem simulation built with Python and Pygame. Predators hun
 
 * Python 3.10+
 * Pygame
+* NumPy

@@ -14,6 +14,8 @@
   - [ ] Total animals born in the last 100 rounds
 - [ ] Reduce the refresh rate of the table to 1 in 70 to save performance
 
+- [ ] Update Git page with new screenshots and littel video of the simulation running
+
 - [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [ ] Animals need new mating state
   - [ ] Keep track of generational statistics
@@ -22,6 +24,9 @@
   - [ ] give every induvidual unique properties instead of hardcoded values from settings
   - [ ] add mixing algorithm (distribution of finite amount of points between different traits to avoid overpowered animals)
 
+- [ ] Multithreading for better performance
+  - [ ] separate predator and prey updates into different threads
+  - [ ] subthreads per animal group (negative effects of unfair advantages for animals late in the queue should be minimal)
  
 ### Done ✓
 
