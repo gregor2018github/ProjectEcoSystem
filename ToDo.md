@@ -1,9 +1,8 @@
 ### Todo
 
-- [ ] Limit the Frame Rate for the simulation view only with the settings from the start screen
-- [ ] In statistics screen limit the Frame Rate to 60 when paused, otherwise unlimited
 
-- [ ] Add click sounds to the button and dropdowns in the start screen
+
+
 
 - [ ] Add more information to the table in the statistics window
   - [ ] Total current population (predators and preys)
@@ -26,6 +25,9 @@
  
 ### Done ✓
 
+- [x] Limit the Frame Rate for the simulation view only with the settings from the start screen
+- [x] In statistics screen limit the Frame Rate to 60 when paused, otherwise unlimited
+- [x] Add click sounds to the button and dropdowns in the start screen
 - [x] Cannot make screenshots anymore, the simulation minimizes when not in focus, must be changed back
 - [x] Add a start screen where you can change settings and launch the simulation
 - [x] more options to statistics window

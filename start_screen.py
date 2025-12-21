@@ -295,7 +295,7 @@ def show_start_screen() -> Dict[str, Any]:
     
     fps_dropdown = Dropdown(
         DROPDOWN_START_X + DROPDOWN_SPACING, DROPDOWN_ROW1_Y, DROPDOWN_WIDTH, DROPDOWN_HEIGHT,
-        "Max FPS:", [30, 45, 60, 120], 120
+        "Max FPS:", [30, 45, 60, 120], 45
     )
     
     prey_dropdown = Dropdown(

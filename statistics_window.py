@@ -810,7 +810,10 @@ class StatisticsWindow:
             draw_button(self.stat_screen, self.toggle_sim_rect, toggle_text, self.font, mouse_pos)
 
             pygame.display.flip()
-            clock.tick(config.FPS)
+            if self.simulation_running:
+                clock.tick(config.STATS_FPS_UNLIMITED)
+            else:
+                clock.tick(config.STATS_FPS_PAUSED)
             
         # Restore main screen
         if not config.LOCKED_SCREEN_SIZE:

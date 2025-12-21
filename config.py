@@ -85,6 +85,8 @@ POPULATION_GRAPH_LIMIT = 20000
 ################################################
     
 FPS = 120 # Maximum allowed frames per second
+STATS_FPS_PAUSED = 60
+STATS_FPS_UNLIMITED = 0 # 0 means unlimited in pygame clock.tick()
 
 # FPS counter (updates every 2 seconds for lightweight performance)
 current_fps = 0.0  # Displayed FPS value
