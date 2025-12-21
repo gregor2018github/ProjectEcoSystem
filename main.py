@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 import pygame
+import os
 import config                        # CONSTANTS
 from animals import Predator, Prey, Animal   # Animal classes
 from simulation import setup_simulation, update_simulation              # Simulation functions
@@ -22,6 +23,9 @@ def main() -> None:
     Handles events, updates simulation state when not paused, and renders
     each frame. Supports camera movement with WASD and arrow keys.
     """
+    # Prevent simulation from minimizing when losing focus in fullscreen
+    os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
+    
     pygame.init()
     
     # Get desktop resolution before any window is created

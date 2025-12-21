@@ -7,6 +7,7 @@ Users can select world size, FPS, and starting populations for prey and predator
 
 import pygame
 import sys
+import os
 from typing import Dict, Any, Tuple, List, Optional
 
 # Constants for start screen
@@ -244,6 +245,9 @@ def show_start_screen() -> Dict[str, Any]:
         - NUM_PREYS: int
         - NUM_PREDATORS: int
     """
+    # Prevent simulation from minimizing when losing focus in fullscreen
+    os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
+    
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Project Ecosystem - Start Screen")

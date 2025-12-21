@@ -1,9 +1,9 @@
 ### Todo
 
-- [ ] Cannot make screenshots anymore, the simulation minimizes when not in focus, must be changed back
-
 - [ ] Limit the Frame Rate for the simulation view only with the settings from the start screen
 - [ ] In statistics screen limit the Frame Rate to 60 when paused, otherwise unlimited
+
+- [ ] Add click sounds to the button and dropdowns in the start screen
 
 - [ ] Add more information to the table in the statistics window
   - [ ] Total current population (predators and preys)
@@ -18,7 +18,7 @@
 - [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [ ] Animals need new mating state
   - [ ] Keep track of generational statistics
-  
+
 - [ ] Add heritage of traits from parents to children
   - [ ] give every induvidual unique properties instead of hardcoded values from settings
   - [ ] add mixing algorithm (distribution of finite amount of points between different traits to avoid overpowered animals)
@@ -26,6 +26,7 @@
  
 ### Done ✓
 
+- [x] Cannot make screenshots anymore, the simulation minimizes when not in focus, must be changed back
 - [x] Add a start screen where you can change settings and launch the simulation
 - [x] more options to statistics window
   - [x] dropdown to select max number of points shown in graphs
