@@ -1,5 +1,10 @@
 ### Todo
 
+- [ ] Cannot make screenshots anymore, the simulation minimizes when not in focus, must be changed back
+
+- [ ] Limit the Frame Rate for the simulation view only with the settings from the start screen
+- [ ] In statistics screen limit the Frame Rate to 60 when paused, otherwise unlimited
+
 - [ ] Add more information to the table in the statistics window
   - [ ] Total current population (predators and preys)
   - [ ] Average age of animals (separately for predators and preys)
@@ -8,13 +13,15 @@
   - [ ] Animals died of starvation in the last 100 rounds
   - [ ] Animals died of old age in the last 100 rounds
   - [ ] Total animals born in the last 100 rounds
+- [ ] Reduce the refresh rate of the table to 1 in 70 to save performance
 
 - [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [ ] Animals need new mating state
   - [ ] Keep track of generational statistics
+  
 - [ ] Add heritage of traits from parents to children
   - [ ] give every induvidual unique properties instead of hardcoded values from settings
-  - [ ] add mixing algorithm (distribution of finite amount of points between different traits)
+  - [ ] add mixing algorithm (distribution of finite amount of points between different traits to avoid overpowered animals)
 
  
 ### Done ✓
