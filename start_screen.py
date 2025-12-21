@@ -266,7 +266,7 @@ def show_start_screen() -> Dict[str, Any]:
     # Create dropdowns
     size_dropdown = Dropdown(
         DROPDOWN_START_X, DROPDOWN_ROW1_Y, DROPDOWN_WIDTH, DROPDOWN_HEIGHT,
-        "Size:", [1.0, 1.5, 2.0, 3.0], 2.0
+        "Gamefield Size:", [1.0, 1.5, 2.0, 3.0], 2.0
     )
     
     fps_dropdown = Dropdown(
@@ -276,12 +276,12 @@ def show_start_screen() -> Dict[str, Any]:
     
     prey_dropdown = Dropdown(
         DROPDOWN_START_X, DROPDOWN_ROW2_Y, DROPDOWN_WIDTH, DROPDOWN_HEIGHT,
-        "Prey Start:", [5, 20, 30, 55, 100, 200], 100
+        "Prey Count Start:", [5, 20, 30, 55, 100, 200], 100
     )
     
     pred_dropdown = Dropdown(
         DROPDOWN_START_X + DROPDOWN_SPACING, DROPDOWN_ROW2_Y, DROPDOWN_WIDTH, DROPDOWN_HEIGHT,
-        "Pred Start:", [0, 4, 5, 10, 25], 10
+        "Predator Count Start:", [0, 4, 5, 10, 25], 10
     )
     
     dropdowns = [size_dropdown, fps_dropdown, prey_dropdown, pred_dropdown]
@@ -302,6 +302,15 @@ def show_start_screen() -> Dict[str, Any]:
             
             # Handle dropdown events
             event_handled = False
+            
+            # If clicking to open a new dropdown, close all others first to allow one-click switching
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for dropdown in dropdowns:
+                    if dropdown.rect.collidepoint(event.pos) and not dropdown.is_open:
+                        for d in dropdowns:
+                            d.is_open = False
+                        break
+            
             for dropdown in dropdowns:
                 if dropdown.handle_event(event):
                     event_handled = True
