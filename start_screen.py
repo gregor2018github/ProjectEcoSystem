@@ -76,27 +76,33 @@ class Dropdown:
             option_rect = pygame.Rect(x, y + height + i * height, width, height)
             self.option_rects.append(option_rect)
     
-    def draw(self, screen: pygame.Surface, font: pygame.font.Font, small_font: pygame.font.Font) -> None:
+    def draw(self, screen: pygame.Surface, font: pygame.font.Font, small_font: pygame.font.Font, enabled: bool = True) -> None:
         """Draw the dropdown menu.
         
         Args:
             screen: Pygame surface to draw on
             font: Font for the selected value
             small_font: Font for the label text
+            enabled: Whether the dropdown is active
         """
         # Draw label
-        label_surface = small_font.render(self.label, True, WHITE)
+        label_color = WHITE if enabled else GRAY
+        label_surface = small_font.render(self.label, True, label_color)
         label_rect = label_surface.get_rect(midbottom=(self.rect.centerx, self.rect.top - 5))
         screen.blit(label_surface, label_rect)
         
         # Draw main dropdown box
-        color = DROPDOWN_HOVER if self.rect.collidepoint(pygame.mouse.get_pos()) else DROPDOWN_BG
+        is_hovered = self.rect.collidepoint(pygame.mouse.get_pos()) if enabled else False
+        color = DROPDOWN_HOVER if is_hovered else DROPDOWN_BG
+        if not enabled:
+            color = (color[0] // 2, color[1] // 2, color[2] // 2)
+            
         pygame.draw.rect(screen, color, self.rect, border_radius=5)
-        pygame.draw.rect(screen, LIGHT_GRAY, self.rect, 2, border_radius=5)
+        pygame.draw.rect(screen, LIGHT_GRAY if enabled else DARK_GRAY, self.rect, 2, border_radius=5)
         
         # Draw selected value
         value_text = str(self.selected)
-        value_surface = font.render(value_text, True, WHITE)
+        value_surface = font.render(value_text, True, WHITE if enabled else GRAY)
         value_rect = value_surface.get_rect(center=(self.rect.centerx, self.rect.centery))
         screen.blit(value_surface, value_rect)
         
@@ -136,15 +142,19 @@ class Dropdown:
                 option_text_rect = option_surface.get_rect(center=option_rect.center)
                 screen.blit(option_surface, option_text_rect)
     
-    def handle_event(self, event: pygame.event.Event) -> bool:
+    def handle_event(self, event: pygame.event.Event, enabled: bool = True) -> bool:
         """Handle mouse events for the dropdown.
         
         Args:
             event: Pygame event to handle
+            enabled: Whether the dropdown is active
             
         Returns:
             True if event was handled, False otherwise
         """
+        if not enabled and not self.is_open:
+            return False
+            
         if event.type == pygame.MOUSEMOTION:
             if self.is_open:
                 self.hover_option = None
@@ -155,9 +165,11 @@ class Dropdown:
         
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
+                from event_handler import play_click_sound
                 # Check if clicked on main dropdown
                 if self.rect.collidepoint(event.pos):
                     self.is_open = not self.is_open
+                    play_click_sound()
                     return True
                 
                 # Check if clicked on an option
@@ -166,10 +178,12 @@ class Dropdown:
                         if option_rect.collidepoint(event.pos):
                             self.selected = option
                             self.is_open = False
+                            play_click_sound()
                             return True
                     
                     # Clicked outside dropdown, close it
                     self.is_open = False
+                    play_click_sound()
                     return True
         
         return False
@@ -231,7 +245,10 @@ class Button:
             True if button was clicked, False otherwise
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            return self.rect.collidepoint(event.pos)
+            if self.rect.collidepoint(event.pos):
+                from event_handler import play_click_sound
+                play_click_sound()
+                return True
         return False
 
 
@@ -249,6 +266,9 @@ def show_start_screen() -> Dict[str, Any]:
     os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
     
     pygame.init()
+    from event_handler import initialize_sounds
+    initialize_sounds()
+    
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Project Ecosystem - Start Screen")
     clock = pygame.time.Clock()
@@ -297,6 +317,7 @@ def show_start_screen() -> Dict[str, Any]:
     while running:
         # Check if any dropdown is open
         any_dropdown_open = any(d.is_open for d in dropdowns)
+        row1_open = size_dropdown.is_open or fps_dropdown.is_open
         
         # Handle events
         for event in pygame.event.get():
@@ -309,14 +330,29 @@ def show_start_screen() -> Dict[str, Any]:
             
             # If clicking to open a new dropdown, close all others first to allow one-click switching
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                for dropdown in dropdowns:
-                    if dropdown.rect.collidepoint(event.pos) and not dropdown.is_open:
-                        for d in dropdowns:
-                            d.is_open = False
-                        break
+                # Check if we clicked on any currently open dropdown's options
+                clicked_on_option = False
+                for d in dropdowns:
+                    if d.is_open:
+                        for opt_rect in d.option_rects:
+                            if opt_rect.collidepoint(event.pos):
+                                clicked_on_option = True
+                                break
+                    if clicked_on_option: break
+                
+                if not clicked_on_option:
+                    for dropdown in dropdowns:
+                        # Only allow switching if the target dropdown is enabled
+                        is_enabled = not (row1_open and dropdown in [prey_dropdown, pred_dropdown])
+                        if is_enabled and dropdown.rect.collidepoint(event.pos) and not dropdown.is_open:
+                            for d in dropdowns:
+                                d.is_open = False
+                            break
             
             for dropdown in dropdowns:
-                if dropdown.handle_event(event):
+                # Row 2 dropdowns are disabled if Row 1 is open
+                is_enabled = not (row1_open and dropdown in [prey_dropdown, pred_dropdown])
+                if dropdown.handle_event(event, enabled=is_enabled):
                     event_handled = True
                     break # Only one dropdown handles an event at a time
             
@@ -351,10 +387,12 @@ def show_start_screen() -> Dict[str, Any]:
         # Draw closed dropdowns first, then open one to ensure it's on top
         for dropdown in dropdowns:
             if not dropdown.is_open:
-                dropdown.draw(screen, dropdown_font, label_font)
+                is_enabled = not (row1_open and dropdown in [prey_dropdown, pred_dropdown])
+                dropdown.draw(screen, dropdown_font, label_font, enabled=is_enabled)
         for dropdown in dropdowns:
             if dropdown.is_open:
-                dropdown.draw(screen, dropdown_font, label_font)
+                # Open dropdowns are always considered enabled for drawing
+                dropdown.draw(screen, dropdown_font, label_font, enabled=True)
         
         pygame.display.flip()
         clock.tick(60)
