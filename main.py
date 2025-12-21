@@ -9,6 +9,7 @@ from animals import Predator, Prey, Animal   # Animal classes
 from simulation import setup_simulation, update_simulation              # Simulation functions
 from ui import draw_simulation       # UI function
 from event_handler import process_event, initialize_sounds  # Event handling function
+from start_screen import show_start_screen  # Start screen function
 
 ###############################################
 # Main
@@ -22,16 +23,30 @@ def main() -> None:
     each frame. Supports camera movement with WASD and arrow keys.
     """
     pygame.init()
+    
+    # Get desktop resolution before any window is created
+    info = pygame.display.Info()
+    desktop_w = info.current_w
+    desktop_h = info.current_h
+
+    # Show start screen and get user configuration
+    start_config = show_start_screen()
+    
+    # Apply user-selected settings to config
+    config.WORLD_SIZE_MULTIPLIER = start_config["WORLD_SIZE_MULTIPLIER"]
+    config.FPS = start_config["FPS"]
+    config.NUM_PREYS = start_config["NUM_PREYS"]
+    config.NUM_PREDATORS = start_config["NUM_PREDATORS"]
+    
     initialize_sounds()
 
     # set the size of the game field, either by locked values or by display size
     if not config.LOCKED_SCREEN_SIZE:
-        # Get user's display info and compute window dimensions
-        info = pygame.display.Info()
-        screen_width = info.current_w
-        screen_height = info.current_h
-        config.XLIM = screen_width
-        config.YLIM = screen_height
+        config.XLIM = desktop_w
+        config.YLIM = desktop_h
+        screen = pygame.display.set_mode((config.XLIM, config.YLIM), pygame.FULLSCREEN)
+    else:
+        screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     
     # Calculate world size based on screen size (2x width and 2x height = 4x area)
     config.WORLD_WIDTH = config.XLIM * config.WORLD_SIZE_MULTIPLIER
@@ -41,7 +56,6 @@ def main() -> None:
     config.camera_x = 0.0
     config.camera_y = 0.0
 
-    screen = pygame.display.set_mode((config.XLIM, config.YLIM))
     clock = pygame.time.Clock()
     predators, preys, grass = setup_simulation()
 

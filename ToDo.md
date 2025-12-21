@@ -1,6 +1,5 @@
 ### Todo
 
-- [ ] Add a start screen where you can change settings and launch the simulation
 - [ ] Add more information to the table in the statistics window
   - [ ] Total current population (predators and preys)
   - [ ] Average age of animals (separately for predators and preys)
@@ -20,6 +19,7 @@
  
 ### Done ✓
 
+- [x] Add a start screen where you can change settings and launch the simulation
 - [x] more options to statistics window
   - [x] dropdown to select max number of points shown in graphs
 - [x] Add FPS counter

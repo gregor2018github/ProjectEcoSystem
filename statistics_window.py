@@ -123,7 +123,11 @@ class StatisticsWindow:
         self.grass = grass
         self.simulation_running = simulation_running
 
-        self.stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
+        if not config.LOCKED_SCREEN_SIZE:
+            self.stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM), pygame.FULLSCREEN)
+        else:
+            self.stat_screen = pygame.display.set_mode((config.XLIM, config.YLIM))
+            
         pygame.display.set_caption("Statistics")
         self.font = pygame.font.Font(None, 20)
         self.running_stats = True
@@ -809,6 +813,10 @@ class StatisticsWindow:
             clock.tick(config.FPS)
             
         # Restore main screen
-        pygame.display.set_mode((config.XLIM, config.YLIM))
+        if not config.LOCKED_SCREEN_SIZE:
+            pygame.display.set_mode((config.XLIM, config.YLIM), pygame.FULLSCREEN)
+        else:
+            pygame.display.set_mode((config.XLIM, config.YLIM))
+            
         pygame.display.set_caption("Simulation")
         return self.simulation_running
