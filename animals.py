@@ -45,6 +45,8 @@ class Animal(ABC):
         self.alive = True
         self.starving = False  # attribute to track starvation
         self.killed = False  # attribute to track kill events
+        self.mating = False  # True if animal is trying to mate this round
+        self.reproduced = False  # animal can raise reproduction signal to simulation module (there new animal will be spawned)
         self.age = 0
         self.cur_consumption = 0.0  
 
@@ -466,3 +468,7 @@ class Prey(Animal):
             self.x = max(0, min(config.WORLD_WIDTH, self.x))
             self.y = max(0, min(config.WORLD_HEIGHT, self.y))
 
+        # Check for Reproduction
+        self.reproduced = False  # Reset reproduction flag
+        if random.random() < config.PREY_REPRODUCTION_RATE:
+            self.reproduced = True

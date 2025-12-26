@@ -81,7 +81,7 @@ def update_simulation(
     # Reproduction: Preys still reproduce randomly
     new_preys = []
     for p in preys:
-        if random.random() < config.PREY_REPRODUCTION_RATE:
+        if p.reproduced:
             new_preys.append(Prey(p.x, p.y))
             config.prey_born += 1
     preys.extend(new_preys)

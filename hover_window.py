@@ -71,6 +71,9 @@ class HoverWindow:
         starvation_bool = animal.starving
         self.lines.append(f"Starving: " + ("Yes" if starvation_bool else "No"))
 
+        mating_bool = animal.mating
+        self.lines.append(f"Mating: " + ("Yes" if mating_bool else "No"))
+
 
         self.lines.append(f"Position: ({int(animal.x)}, {int(animal.y)})")
 
