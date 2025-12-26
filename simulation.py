@@ -11,7 +11,7 @@ from spatial_hash import SpatialHash
 
 # Pre-allocate spatial hash grids (reused each frame to avoid allocations)
 _predator_hash: SpatialHash[Predator] = SpatialHash(max(config.PREDATOR_SMELL_DISTANCE, config.PREDATOR_PREDATOR_AVOID_DISTANCE))
-_prey_hash: SpatialHash[Prey] = SpatialHash(config.PREDATOR_SMELL_DISTANCE)
+_prey_hash: SpatialHash[Prey] = SpatialHash(max(config.PREDATOR_SMELL_DISTANCE, config.PREY_MATING_SEARCH_DISTANCE))
 
 ################################################
 # Simulation Setup and Update Functions
@@ -65,7 +65,7 @@ def update_simulation(
     for p in predators:
         p.update(_predator_hash, _prey_hash, grass)
     for p in preys:
-        p.update(_predator_hash, grass)
+        p.update(_predator_hash, _prey_hash, grass)
         
     # Count deaths before removal
     preys_before = len(preys)
@@ -82,8 +82,10 @@ def update_simulation(
     new_preys = []
     for p in preys:
         if p.reproduced:
-            new_preys.append(Prey(p.x, p.y))
-            config.prey_born += 1
+            number_preys_born = random.randint(1, 4)  # Each reproduction event spawns 1 to 4 new preys
+            for _ in range(number_preys_born):
+                new_preys.append(Prey(p.x, p.y))
+            config.prey_born += number_preys_born
     preys.extend(new_preys)
     
     # Reproduction: Predators now reproduce only if they killed a prey

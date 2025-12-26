@@ -341,12 +341,14 @@ class Prey(Animal):
         
         Returns:
             A string indicating the prey's state: 'Deceased', 'Fleeing',
-            'Eating Grass', 'Starving', or 'Idle'.
+            'Mating', 'Eating Grass', 'Starving', or 'Idle'.
         """
         if not self.alive:
             return "Deceased"
         if self.is_fleeing:
             return "Fleeing"
+        if self.mating:
+            return "Mating"
         if self.is_eating: # Eating takes precedence over starving if both are true
             return "Eating Grass"
         if self.starving:
@@ -366,14 +368,15 @@ class Prey(Animal):
         if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
             pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
   
-    def update(self, predator_hash: SpatialHash[Predator], grass: GrassArray) -> None:
+    def update(self, predator_hash: SpatialHash[Predator], prey_hash: SpatialHash[Prey], grass: GrassArray) -> None:
         """Update the prey's state for one simulation tick.
         
-        Handles aging, fleeing from predators, energy consumption, movement
-        towards areas with more grass, and eating grass to gain energy.
+        Handles aging, fleeing from predators, mating behavior, energy consumption,
+        movement towards areas with more grass, and eating grass to gain energy.
         
         Args:
             predator_hash: Spatial hash of all predators for fast proximity queries.
+            prey_hash: Spatial hash of all prey for fast mating partner queries.
             grass: GrassArray for grass management.
         """
         # Reset status flags at the beginning of each update
@@ -468,7 +471,51 @@ class Prey(Animal):
             self.x = max(0, min(config.WORLD_WIDTH, self.x))
             self.y = max(0, min(config.WORLD_HEIGHT, self.y))
 
-        # Check for Reproduction
-        self.reproduced = False  # Reset reproduction flag
-        if random.random() < config.PREY_REPRODUCTION_RATE:
-            self.reproduced = True
+        if not config.PREY_MATING_SIMULATION:
+            # Simple reproduction: random chance each round
+            self.reproduced = False  # Reset reproduction flag
+            if random.random() / 4 < config.PREY_REPRODUCTION_RATE:
+                self.reproduced = True
+        else:
+            # Complex mating simulation
+            self.reproduced = False  # Reset reproduction flag
+            
+            # If currently mating, look for a partner (but not if fleeing - fleeing has priority)
+            if self.mating and not self.is_fleeing:
+                # Find nearby mating prey using spatial hash for efficiency
+                nearby_prey = prey_hash.get_nearby(self.x, self.y, config.PREY_MATING_SEARCH_DISTANCE)
+                
+                best_mate = None
+                min_dist_sq = float('inf')
+                
+                for other in nearby_prey:
+                    if other is self or not other.mating or not other.alive:
+                        continue
+                    dx = other.x - self.x
+                    dy = other.y - self.y
+                    dist_sq = dx*dx + dy*dy
+                    if dist_sq < config.PREY_MATING_SEARCH_DISTANCE**2 and dist_sq < min_dist_sq:
+                        min_dist_sq = dist_sq
+                        best_mate = other
+                
+                if best_mate:
+                    # Check if close enough to mate
+                    if min_dist_sq <= config.PREY_MATING_CLOSE_DISTANCE**2:
+                        # Mating successful! One prey reproduces, both stop mating
+                        self.reproduced = True
+                        self.mating = False
+                        best_mate.mating = False
+                    else:
+                        # Move towards the mate
+                        dist = min_dist_sq ** 0.5 or 1
+                        dx = best_mate.x - self.x
+                        dy = best_mate.y - self.y
+                        self.x += (dx / dist) * config.PREY_SPEED
+                        self.y += (dy / dist) * config.PREY_SPEED
+                        # Boundary checks after mating movement
+                        self.x = max(0, min(config.WORLD_WIDTH, self.x))
+                        self.y = max(0, min(config.WORLD_HEIGHT, self.y))
+            
+            # Random chance to enter mating mode (if not already mating)
+            if not self.mating and random.random() < config.PREY_REPRODUCTION_RATE:
+                self.mating = True

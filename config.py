@@ -46,7 +46,10 @@ PREDATOR_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age predators
 
 PREY_SPEED = 3
 PREY_FEAR_DISTANCE = 20
+PREY_MATING_SIMULATION = True  # If True, complexer mating behavior is enabled, otherwise simply spawns new prey at reproduction rate
 PREY_REPRODUCTION_RATE = 0.002 # conditionless reproduction rate
+PREY_MATING_SEARCH_DISTANCE = 500  # Distance to search for potential mates
+PREY_MATING_CLOSE_DISTANCE = 5  # Distance at which mating occurs (both prey close enough)
 PREY_MAX_FOOD = 200
 PREY_FOOD_GAIN_PER_GRASS = 0.15 # x% of grass amount of the chunk the prey is in
 PREY_STARV_BORDER = 0.2  # x% of max food
