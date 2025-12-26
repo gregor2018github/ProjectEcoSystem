@@ -84,7 +84,7 @@ def update_simulation(
         if p.reproduced:
             number_preys_born = random.randint(1, 4)  # Each reproduction event spawns 1 to 4 new preys
             for _ in range(number_preys_born):
-                new_preys.append(Prey(p.x, p.y))
+                new_preys.append(Prey(p.x, p.y, generation=p.generation + 1))
             config.prey_born += number_preys_born
     preys.extend(new_preys)
     
@@ -94,7 +94,7 @@ def update_simulation(
         if p.killed:
             rand_x_dist = random.uniform(10, 15)*random.choice([-1, 1])
             rand_y_dist = random.uniform(10, 15)*random.choice([-1, 1])
-            new_predators.append(Predator(p.x + rand_x_dist, p.y + rand_y_dist))
+            new_predators.append(Predator(p.x + rand_x_dist, p.y + rand_y_dist, generation=p.generation + 1))
             config.predator_born += 1
             p.killed = False  # Reset flag after reproduction
     predators.extend(new_predators)

@@ -77,6 +77,9 @@ class HoverWindow:
 
         self.lines.append(f"Position: ({int(animal.x)}, {int(animal.y)})")
 
+        generation = animal.generation
+        self.lines.append(f"Generation: {generation}")
+
 
         # Calculate window size based on content
         self.max_line_width = 0

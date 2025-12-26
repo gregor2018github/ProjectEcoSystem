@@ -48,7 +48,8 @@ class Animal(ABC):
         self.mating = False  # True if animal is trying to mate this round
         self.reproduced = False  # animal can raise reproduction signal to simulation module (there new animal will be spawned)
         self.age = 0
-        self.cur_consumption = 0.0  
+        self.cur_consumption = 0.0
+        self.generation = 0  # Track generation for statistics  
 
     def get_rect(self) -> pygame.Rect:
         """Get the bounding rectangle for this animal in world coordinates.
@@ -158,7 +159,7 @@ class Predator(Animal):
     COLOR: tuple[int, int, int] = (255, 0, 0)  # Red
     SIZE: int = 5
 
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, generation: int=0) -> None:
         """Initialize a predator at the given position.
         
         Args:
@@ -170,6 +171,7 @@ class Predator(Animal):
         self.hunting = False  # attribute to track hunting state
         self.avoiding_predator_flag = False # For status display
         self.prey_eaten = 0
+        self.generation = generation  # Track generation for statistics
 
     def get_status(self) -> str:
         """Get a string describing the predator's current status.
@@ -323,7 +325,7 @@ class Prey(Animal):
     COLOR: tuple[int, int, int] = (255, 255, 255)  # White
     SIZE: int = 3
 
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, generation: int=0) -> None:
         """Initialize a prey animal at the given position.
         
         Args:
@@ -335,6 +337,7 @@ class Prey(Animal):
         self.is_fleeing = False
         self.is_eating = False
         self.grass_eaten = 0
+        self.generation = generation  # Track generation for statistics
     
     def get_status(self) -> str:
         """Get a string describing the prey's current status.

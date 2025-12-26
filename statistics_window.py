@@ -555,6 +555,12 @@ class StatisticsWindow:
             avg_pred = sum(config.stats_history["Predator Count"]) / len(config.stats_history["Predator Count"]) if config.stats_history["Predator Count"] else 0
             
             ratio = prey_count / pred_count if pred_count > 0 else float('inf')
+
+            highest_prey_gen = max((p.generation for p in self.preys), default=0)
+            lowest_prey_gen = min((p.generation for p in self.preys), default=0)
+
+            highest_pred_gen = max((p.generation for p in self.predators), default=0)
+            lowest_pred_gen = min((p.generation for p in self.predators), default=0)
             
             rows = [
                 ("Statistic", "Value"),
@@ -570,6 +576,9 @@ class StatisticsWindow:
                 ("Avg Predator", f"{avg_pred:.1f}"),
                 ("", ""),
                 ("Prey/Predator Ratio", f"{ratio:.2f}"),
+                ("", ""),
+                ("Prey Gen Range", f"{lowest_prey_gen} - {highest_prey_gen}"),
+                ("Predator Gen Range", f"{lowest_pred_gen} - {highest_pred_gen}"),
             ]
             
             line_height = 20
