@@ -178,12 +178,14 @@ class Predator(Animal):
         
         Returns:
             A string indicating the predator's state: 'Deceased', 'Hunting',
-            'Avoiding Predator', 'Starving', or 'Idle'.
+            'Mating', 'Avoiding Predator', 'Starving', or 'Idle'.
         """
         if not self.alive:
             return "Deceased"
         if self.hunting:
             return "Hunting"
+        if self.mating:
+            return "Mating"
         if self.avoiding_predator_flag:
             return "Avoiding Predator"
         if self.starving:
@@ -207,8 +209,9 @@ class Predator(Animal):
         """Update the predator's state for one simulation tick.
         
         Handles aging, energy consumption, predator avoidance, hunting behavior,
-        and random movement. The predator will hunt prey when hungry, avoid
-        other predators when not starving, and move randomly when idle.
+        mating behavior, and random movement. The predator will hunt prey when hungry,
+        avoid other predators when not starving or mating, search for mates after
+        a kill, and move randomly when idle.
         
         Args:
             predator_hash: Spatial hash of all predators for fast proximity queries.
@@ -216,6 +219,7 @@ class Predator(Animal):
             grass: GrassArray for grass management (unused by predators).
         """
         self.killed = False # means it killed something this round
+        self.reproduced = False  # Reset reproduction flag
         self.avoiding_predator_flag = False # Reset at the start of each update cycle
         target = None
         min_dist_prey = float('inf')
@@ -235,8 +239,12 @@ class Predator(Animal):
             self.alive = False
             config.predator_dead_by_starvation += 1
             return
+        
+        # Starving predators lose their mating flag - survival takes priority
+        if self.starving:
+            self.mating = False
 
-        # Separate moving loops for evading predators, hunting prey, and moving randomly
+        # Separate moving loops for evading predators, hunting prey, mating, and moving randomly
         
         # Check for nearby predators and calculate avoidance vector (using spatial hash)
         if config.PRED_AVOID_PRED:
@@ -253,54 +261,93 @@ class Predator(Animal):
                         avoid_dx += dx / dist 
                         avoid_dy += dy / dist
         
-        # If avoiding predators, move away and skip hunting, but only if not starving
-        if config.PRED_AVOID_PRED and predator_too_close and not self.starving:
+        # If avoiding predators, move away and skip hunting, but only if not starving and not mating
+        if config.PRED_AVOID_PRED and predator_too_close and not self.starving and not self.mating:
             self.hunting = False
             self.avoiding_predator_flag = True # Set status flag
             norm = (avoid_dx*avoid_dx + avoid_dy*avoid_dy)**0.5 or 1 # Normalize the total avoidance vector
             self.x += (avoid_dx / norm) * config.PREDATOR_SPEED 
             self.y += (avoid_dy / norm) * config.PREDATOR_SPEED
         else:
-            # Find the closest prey using spatial hash
-            nearby_preys = prey_hash.get_nearby(self.x, self.y, config.PREDATOR_SMELL_DISTANCE)
-            for prey in nearby_preys:
-                dx = prey.x - self.x
-                dy = prey.y - self.y
-                dist_sq = dx*dx + dy*dy
-                # check if prey is in smell distance (using squared distance)
-                if dist_sq < config.PREDATOR_SMELL_DISTANCE**2:
-                    # Check if prey is closer than the current target
-                    if dist_sq < min_dist_prey:
-                        min_dist_prey = dist_sq
-                        target = prey
-            
-            # Convert squared distance to actual distance if we found a target
-            if target:
-                min_dist_prey = min_dist_prey**0.5
-            
-            # If a target is found, move towards it
-            if target:
-                self.hunting = True
-                dx = target.x - self.x
-                dy = target.y - self.y
-                # dist is already calculated as min_dist_prey
-                dist_norm = min_dist_prey or 1 # Avoid division by zero
-                self.x += (dx / dist_norm) * config.PREDATOR_SPEED
-                self.y += (dy / dist_norm) * config.PREDATOR_SPEED
-                
-                # Check for kill
-                if min_dist_prey < self.SIZE + target.SIZE: # No need to check target.alive again, done in prey finding loop
-                    target.alive = False
-                    self.killed = True  # Mark kill for reproduction
-                    self.prey_eaten += 1
-                    config.prey_dead_by_hunting += 1
-                    # Add food gain on kill; cap to max
-                    self.food = min(config.PREDATOR_MAX_FOOD, self.food + config.PREDATOR_FOOD_GAIN_PER_KILL)
-            # if not hunting, move randomly
-            else:
+            # Try to find a mate if in mating mode
+            mate_found = False
+            if self.mating:
                 self.hunting = False
-                self.x += random.uniform(-1, 1)
-                self.y += random.uniform(-1, 1)
+                # Find nearby mating predators using spatial hash for efficiency
+                nearby_predators = predator_hash.get_nearby(self.x, self.y, config.PREDATOR_MATING_SEARCH_DISTANCE)
+                
+                best_mate = None
+                min_dist_sq = float('inf')
+                
+                for other in nearby_predators:
+                    if other is self or not other.mating or not other.alive:
+                        continue
+                    dx = other.x - self.x
+                    dy = other.y - self.y
+                    dist_sq = dx*dx + dy*dy
+                    if dist_sq < config.PREDATOR_MATING_SEARCH_DISTANCE**2 and dist_sq < min_dist_sq:
+                        min_dist_sq = dist_sq
+                        best_mate = other
+                
+                if best_mate:
+                    mate_found = True
+                    # Check if close enough to mate
+                    if min_dist_sq <= config.PREDATOR_MATING_CLOSE_DISTANCE**2:
+                        # Mating successful! One predator reproduces, both stop mating
+                        self.reproduced = True
+                        self.mating = False
+                        best_mate.mating = False
+                    else:
+                        # Move towards the mate
+                        dist = min_dist_sq ** 0.5 or 1
+                        dx = best_mate.x - self.x
+                        dy = best_mate.y - self.y
+                        self.x += (dx / dist) * config.PREDATOR_SPEED
+                        self.y += (dy / dist) * config.PREDATOR_SPEED
+            
+            # If not mating or no mate found, try to hunt
+            if not mate_found:
+                # Find the closest prey using spatial hash
+                nearby_preys = prey_hash.get_nearby(self.x, self.y, config.PREDATOR_SMELL_DISTANCE)
+                for prey in nearby_preys:
+                    dx = prey.x - self.x
+                    dy = prey.y - self.y
+                    dist_sq = dx*dx + dy*dy
+                    # check if prey is in smell distance (using squared distance)
+                    if dist_sq < config.PREDATOR_SMELL_DISTANCE**2:
+                        # Check if prey is closer than the current target
+                        if dist_sq < min_dist_prey:
+                            min_dist_prey = dist_sq
+                            target = prey
+                
+                # Convert squared distance to actual distance if we found a target
+                if target:
+                    min_dist_prey = min_dist_prey**0.5
+                
+                # If a target is found, move towards it
+                if target:
+                    self.hunting = True
+                    dx = target.x - self.x
+                    dy = target.y - self.y
+                    # dist is already calculated as min_dist_prey
+                    dist_norm = min_dist_prey or 1 # Avoid division by zero
+                    self.x += (dx / dist_norm) * config.PREDATOR_SPEED
+                    self.y += (dy / dist_norm) * config.PREDATOR_SPEED
+                    
+                    # Check for kill
+                    if min_dist_prey < self.SIZE + target.SIZE: # No need to check target.alive again, done in prey finding loop
+                        target.alive = False
+                        self.killed = True  # Mark kill event
+                        self.mating = True  # Enter mating mode after a kill
+                        self.prey_eaten += 1
+                        config.prey_dead_by_hunting += 1
+                        # Add food gain on kill; cap to max
+                        self.food = min(config.PREDATOR_MAX_FOOD, self.food + config.PREDATOR_FOOD_GAIN_PER_KILL)
+                # if not hunting, move randomly
+                else:
+                    self.hunting = False
+                    self.x += random.uniform(-1, 1)
+                    self.y += random.uniform(-1, 1)
 
         # Boundary checks (use world size, not screen size)
         self.x = max(0, min(config.WORLD_WIDTH, self.x))

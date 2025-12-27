@@ -27,7 +27,7 @@ total_grass = 0.0
 # PREDATOR behavior
 ################################################
 
-PREDATOR_SPEED = 3.1
+PREDATOR_SPEED = 3.15
 PRED_AVOID_PRED = True
 PREDATOR_PREDATOR_AVOID_DISTANCE = 140 # distance to avoid other predators
 PREDATOR_SMELL_DISTANCE = 200 # distance to smell prey
@@ -39,6 +39,8 @@ PREDATOR_HUNTING_ENERGY_COST = 0.9
 PREDATOR_STARV_BORDER = 0.2   # x% of max food
 PREDATOR_MAX_AGE = 1200 # max age in rounds
 PREDATOR_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age predators
+PREDATOR_MATING_SEARCH_DISTANCE = 500  # Distance to search for potential mates
+PREDATOR_MATING_CLOSE_DISTANCE = 10  # Distance at which mating occurs (both predators close enough)
 
 ################################################
 # PREY behavior
