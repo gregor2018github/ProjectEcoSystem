@@ -27,35 +27,39 @@ total_grass = 0.0
 # PREDATOR behavior
 ################################################
 
-PREDATOR_SPEED = 3.15
 PRED_AVOID_PRED = True
+PREDATOR_REPRODUCTION_RATE = 0.000 # conditionless reproduction rate
+PREDATOR_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age predators
+PREDATOR_MATING_CLOSE_DISTANCE = 10  # Distance at which mating occurs (both predators close enough)
+
+# Predator traits that can change evolutionarily
+PREDATOR_SPEED = 3.15
 PREDATOR_PREDATOR_AVOID_DISTANCE = 140 # distance to avoid other predators
 PREDATOR_SMELL_DISTANCE = 200 # distance to smell prey
-PREDATOR_REPRODUCTION_RATE = 0.000 # conditionless reproduction rate
 PREDATOR_MAX_FOOD = 500
 PREDATOR_FOOD_GAIN_PER_KILL = 350
 PREDATOR_REGULAR_ENERGY_COST = 0.7
 PREDATOR_HUNTING_ENERGY_COST = 0.9 
 PREDATOR_STARV_BORDER = 0.2   # x% of max food
 PREDATOR_MAX_AGE = 1200 # max age in rounds
-PREDATOR_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age predators
 PREDATOR_MATING_SEARCH_DISTANCE = 500  # Distance to search for potential mates
-PREDATOR_MATING_CLOSE_DISTANCE = 10  # Distance at which mating occurs (both predators close enough)
 
 ################################################
 # PREY behavior
 ################################################
 
+PREY_REPRODUCTION_RATE = 0.002 # conditionless reproduction rate
+PREY_REGULAR_ENERGY_COST = 0.95
+PREY_MATING_CLOSE_DISTANCE = 5  # Distance at which mating occurs (both prey close enough)
+
+# Prey traits that can change evolutionarily
 PREY_SPEED = 3
 PREY_FEAR_DISTANCE = 20
 PREY_MATING_SIMULATION = True  # If True, complexer mating behavior is enabled, otherwise simply spawns new prey at reproduction rate
-PREY_REPRODUCTION_RATE = 0.002 # conditionless reproduction rate
 PREY_MATING_SEARCH_DISTANCE = 500  # Distance to search for potential mates
-PREY_MATING_CLOSE_DISTANCE = 5  # Distance at which mating occurs (both prey close enough)
 PREY_MAX_FOOD = 200
 PREY_FOOD_GAIN_PER_GRASS = 0.15 # x% of grass amount of the chunk the prey is in
 PREY_STARV_BORDER = 0.2  # x% of max food
-PREY_REGULAR_ENERGY_COST = 0.95
 PREY_FLEE_ENERGY_COST = 1.00
 PREY_MAX_AGE = 900 # max age in rounds
 PREY_HIGH_AGE_HEALTH = 0.95 # daily survival chance for high age preys

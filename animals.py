@@ -140,6 +140,10 @@ class Animal(ABC):
         """
         pass
 
+    @abstractmethod
+    def inherit_traits(self, partner: Animal) -> Animal:
+        pass
+
 ###############################################
 # Predators
 ###############################################
