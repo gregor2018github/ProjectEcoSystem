@@ -50,6 +50,7 @@ class Animal(ABC):
         self.age = 0
         self.cur_consumption = 0.0
         self.generation = 0  # Track generation for statistics  
+        self.offspring_created = 0  # Total number of offspring created by this animal
 
     def get_rect(self) -> pygame.Rect:
         """Get the bounding rectangle for this animal in world coordinates.
@@ -93,13 +94,13 @@ class Animal(ABC):
         if isinstance(self, Predator):
             # Predator energy consumption logic
             if self.hunting:
-                self.cur_consumption = config.PREDATOR_HUNTING_ENERGY_COST
+                self.cur_consumption = self.hunting_energy_cost
             else:
-                self.cur_consumption = config.PREDATOR_REGULAR_ENERGY_COST
+                self.cur_consumption = self.regular_energy_cost
         else:
             # Prey energy consumption logic
             if self.is_fleeing:
-                self.cur_consumption = config.PREY_FLEE_ENERGY_COST
+                self.cur_consumption = self.flee_energy_cost
             else:
                 self.cur_consumption = config.PREY_REGULAR_ENERGY_COST
 
@@ -108,18 +109,11 @@ class Animal(ABC):
         if self.food <= 0:
             return True  # Mark as dead if food is depleted
         else: # else check if the animal is starving
-            if isinstance(self, Predator):
-                # Predator starvation check
-                if self.food < config.PREDATOR_STARV_BORDER * config.PREDATOR_MAX_FOOD:
-                    self.starving = True
-                else:
-                    self.starving = False
+            # Use instance variables for starvation check
+            if self.food < self.starv_border * self.max_food:
+                self.starving = True
             else:
-                # Prey starvation check
-                if self.food < config.PREY_STARV_BORDER * config.PREY_MAX_FOOD:
-                    self.starving = True
-                else:
-                    self.starving = False
+                self.starving = False
         return False  # Mark as alive if food is not depleted
 
     @abstractmethod
@@ -171,7 +165,21 @@ class Predator(Animal):
             y: The initial y-coordinate.
         """
         super().__init__(x, y)
-        self.food = config.PREDATOR_MAX_FOOD  # Initialize predator food
+        
+        # Evolutionary traits (can vary between individuals)
+        self.speed = config.PREDATOR_SPEED
+        self.predator_avoid_distance = config.PREDATOR_PREDATOR_AVOID_DISTANCE
+        self.smell_distance = config.PREDATOR_SMELL_DISTANCE
+        self.max_food = config.PREDATOR_MAX_FOOD
+        self.food_gain_per_kill = config.PREDATOR_FOOD_GAIN_PER_KILL
+        self.regular_energy_cost = config.PREDATOR_REGULAR_ENERGY_COST
+        self.hunting_energy_cost = config.PREDATOR_HUNTING_ENERGY_COST
+        self.starv_border = config.PREDATOR_STARV_BORDER
+        self.max_age = config.PREDATOR_MAX_AGE
+        self.high_age_health = config.PREDATOR_HIGH_AGE_HEALTH
+        self.mating_search_distance = config.PREDATOR_MATING_SEARCH_DISTANCE
+        
+        self.food = self.max_food  # Initialize predator food
         self.hunting = False  # attribute to track hunting state
         self.avoiding_predator_flag = False # For status display
         self.prey_eaten = 0
@@ -233,8 +241,8 @@ class Predator(Animal):
 
         # check for death by age
         self.age += 1
-        if self.age > config.PREDATOR_MAX_AGE:
-            if random.uniform(0, 1) > config.PREDATOR_HIGH_AGE_HEALTH: # x% chance to die of old age
+        if self.age > self.max_age:
+            if random.uniform(0, 1) > self.high_age_health: # x% chance to die of old age
                 self.alive = False
                 config.predator_dead_by_age += 1
                 return
@@ -252,13 +260,13 @@ class Predator(Animal):
         
         # Check for nearby predators and calculate avoidance vector (using spatial hash)
         if config.PRED_AVOID_PRED:
-            nearby_predators = predator_hash.get_nearby(self.x, self.y, config.PREDATOR_PREDATOR_AVOID_DISTANCE)
+            nearby_predators = predator_hash.get_nearby(self.x, self.y, self.predator_avoid_distance)
             for other in nearby_predators:
                 if other is not self:
                     dx = self.x - other.x  # Vector pointing away from the other predator
                     dy = self.y - other.y
                     dist_sq = dx*dx + dy*dy # Use squared distance for efficiency
-                    if dist_sq < config.PREDATOR_PREDATOR_AVOID_DISTANCE**2 and dist_sq != 0:
+                    if dist_sq < self.predator_avoid_distance**2 and dist_sq != 0:
                         predator_too_close = True
                         dist = dist_sq**0.5
                         # Add normalized vector pointing away, weighted by inverse distance (stronger avoidance for closer predators)
@@ -270,15 +278,15 @@ class Predator(Animal):
             self.hunting = False
             self.avoiding_predator_flag = True # Set status flag
             norm = (avoid_dx*avoid_dx + avoid_dy*avoid_dy)**0.5 or 1 # Normalize the total avoidance vector
-            self.x += (avoid_dx / norm) * config.PREDATOR_SPEED 
-            self.y += (avoid_dy / norm) * config.PREDATOR_SPEED
+            self.x += (avoid_dx / norm) * self.speed 
+            self.y += (avoid_dy / norm) * self.speed
         else:
             # Try to find a mate if in mating mode
             mate_found = False
             if self.mating:
                 self.hunting = False
                 # Find nearby mating predators using spatial hash for efficiency
-                nearby_predators = predator_hash.get_nearby(self.x, self.y, config.PREDATOR_MATING_SEARCH_DISTANCE)
+                nearby_predators = predator_hash.get_nearby(self.x, self.y, self.mating_search_distance)
                 
                 best_mate = None
                 min_dist_sq = float('inf')
@@ -289,7 +297,7 @@ class Predator(Animal):
                     dx = other.x - self.x
                     dy = other.y - self.y
                     dist_sq = dx*dx + dy*dy
-                    if dist_sq < config.PREDATOR_MATING_SEARCH_DISTANCE**2 and dist_sq < min_dist_sq:
+                    if dist_sq < self.mating_search_distance**2 and dist_sq < min_dist_sq:
                         min_dist_sq = dist_sq
                         best_mate = other
                 
@@ -306,19 +314,19 @@ class Predator(Animal):
                         dist = min_dist_sq ** 0.5 or 1
                         dx = best_mate.x - self.x
                         dy = best_mate.y - self.y
-                        self.x += (dx / dist) * config.PREDATOR_SPEED
-                        self.y += (dy / dist) * config.PREDATOR_SPEED
+                        self.x += (dx / dist) * self.speed
+                        self.y += (dy / dist) * self.speed
             
             # If not mating or no mate found, try to hunt
             if not mate_found:
                 # Find the closest prey using spatial hash
-                nearby_preys = prey_hash.get_nearby(self.x, self.y, config.PREDATOR_SMELL_DISTANCE)
+                nearby_preys = prey_hash.get_nearby(self.x, self.y, self.smell_distance)
                 for prey in nearby_preys:
                     dx = prey.x - self.x
                     dy = prey.y - self.y
                     dist_sq = dx*dx + dy*dy
                     # check if prey is in smell distance (using squared distance)
-                    if dist_sq < config.PREDATOR_SMELL_DISTANCE**2:
+                    if dist_sq < self.smell_distance**2:
                         # Check if prey is closer than the current target
                         if dist_sq < min_dist_prey:
                             min_dist_prey = dist_sq
@@ -335,8 +343,8 @@ class Predator(Animal):
                     dy = target.y - self.y
                     # dist is already calculated as min_dist_prey
                     dist_norm = min_dist_prey or 1 # Avoid division by zero
-                    self.x += (dx / dist_norm) * config.PREDATOR_SPEED
-                    self.y += (dy / dist_norm) * config.PREDATOR_SPEED
+                    self.x += (dx / dist_norm) * self.speed
+                    self.y += (dy / dist_norm) * self.speed
                     
                     # Check for kill
                     if min_dist_prey < self.SIZE + target.SIZE: # No need to check target.alive again, done in prey finding loop
@@ -346,7 +354,7 @@ class Predator(Animal):
                         self.prey_eaten += 1
                         config.prey_dead_by_hunting += 1
                         # Add food gain on kill; cap to max
-                        self.food = min(config.PREDATOR_MAX_FOOD, self.food + config.PREDATOR_FOOD_GAIN_PER_KILL)
+                        self.food = min(self.max_food, self.food + self.food_gain_per_kill)
                 # if not hunting, move randomly
                 else:
                     self.hunting = False
@@ -356,6 +364,19 @@ class Predator(Animal):
         # Boundary checks (use world size, not screen size)
         self.x = max(0, min(config.WORLD_WIDTH, self.x))
         self.y = max(0, min(config.WORLD_HEIGHT, self.y))
+
+    def inherit_traits(self, partner: Predator) -> Predator:
+        """Create a new predator with traits inherited from this predator and a partner.
+        
+        Args:
+            partner: The other parent predator.
+            
+        Returns:
+            A new Predator with inherited traits.
+        """
+        child = Predator(self.x, self.y, generation=max(self.generation, partner.generation) + 1)
+        # For now, child inherits default traits - can be extended for evolutionary inheritance
+        return child
 
 ###############################################
 # Prey 
@@ -384,7 +405,20 @@ class Prey(Animal):
             y: The initial y-coordinate.
         """
         super().__init__(x, y)
-        self.food = config.PREY_MAX_FOOD  # Initialize prey food
+        
+        # Evolutionary traits (can vary between individuals)
+        self.speed = config.PREY_SPEED
+        self.fear_distance = config.PREY_FEAR_DISTANCE
+        self.mating_simulation = config.PREY_MATING_SIMULATION
+        self.mating_search_distance = config.PREY_MATING_SEARCH_DISTANCE
+        self.max_food = config.PREY_MAX_FOOD
+        self.food_gain_per_grass = config.PREY_FOOD_GAIN_PER_GRASS
+        self.starv_border = config.PREY_STARV_BORDER
+        self.flee_energy_cost = config.PREY_FLEE_ENERGY_COST
+        self.max_age = config.PREY_MAX_AGE
+        self.high_age_health = config.PREY_HIGH_AGE_HEALTH
+        
+        self.food = self.max_food  # Initialize prey food
         self.is_fleeing = False
         self.is_eating = False
         self.grass_eaten = 0
@@ -439,8 +473,8 @@ class Prey(Animal):
 
         # check for death by age
         self.age += 1
-        if self.age > config.PREY_MAX_AGE:
-            if random.uniform(0, 1) > config.PREY_HIGH_AGE_HEALTH:  # x% chance to die of old age
+        if self.age > self.max_age:
+            if random.uniform(0, 1) > self.high_age_health:  # x% chance to die of old age
                 self.alive = False
                 config.prey_dead_by_age += 1
                 return
@@ -448,19 +482,19 @@ class Prey(Animal):
         # Flee from predators using spatial hash (animal flees first, then the cost of moving is calculated)
         flee_dx = 0
         flee_dy = 0
-        nearby_predators = predator_hash.get_nearby(self.x, self.y, config.PREY_FEAR_DISTANCE)
+        nearby_predators = predator_hash.get_nearby(self.x, self.y, self.fear_distance)
         for predator in nearby_predators:
             dx = self.x - predator.x
             dy = self.y - predator.y
             dist_sq = dx*dx + dy*dy
-            if dist_sq < config.PREY_FEAR_DISTANCE**2 and dist_sq != 0:
+            if dist_sq < self.fear_distance**2 and dist_sq != 0:
                 dist = dist_sq ** 0.5
                 flee_dx += dx / dist
                 flee_dy += dy / dist
         if flee_dx or flee_dy:
             norm = (flee_dx*flee_dx + flee_dy*flee_dy) ** 0.5 or 1
-            self.x += (flee_dx / norm) * config.PREY_SPEED
-            self.y += (flee_dy / norm) * config.PREY_SPEED
+            self.x += (flee_dx / norm) * self.speed
+            self.y += (flee_dy / norm) * self.speed
             self.is_fleeing = True # Set status flag
         else:
             self.x += random.uniform(-1, 1)
@@ -495,9 +529,9 @@ class Prey(Animal):
             
             if grass_dx != 0 or grass_dy != 0:
                 norm = (grass_dx*grass_dx + grass_dy*grass_dy) ** 0.5 or 1
-                # Scale the adjustment (using half of PREY_SPEED)
-                self.x += (grass_dx / norm) * (config.PREY_SPEED * 0.5)
-                self.y += (grass_dy / norm) * (config.PREY_SPEED * 0.5)
+                # Scale the adjustment (using half of speed)
+                self.x += (grass_dx / norm) * (self.speed * 0.5)
+                self.y += (grass_dy / norm) * (self.speed * 0.5)
         
             # Boundary checks (use world size, not screen size)
             self.x = max(0, min(config.WORLD_WIDTH, self.x))
@@ -510,12 +544,12 @@ class Prey(Animal):
             # Consume grass and gain food based on current patch (direct array access)
             if 0 <= chunk_i < grass.cols and 0 <= chunk_j < grass.rows:
                 grass_amount = grass.amounts[chunk_i, chunk_j]
-                gain = grass_amount * config.PREY_FOOD_GAIN_PER_GRASS
+                gain = grass_amount * self.food_gain_per_grass
                 # Prey is eating if it gains food and is not full, and grass is available
-                if gain > 0 and self.food < config.PREY_MAX_FOOD and grass_amount > 0:
+                if gain > 0 and self.food < self.max_food and grass_amount > 0:
                     self.is_eating = True
                     self.grass_eaten += gain
-                self.food = min(config.PREY_MAX_FOOD, self.food + gain)
+                self.food = min(self.max_food, self.food + gain)
                 # Track grass consumed for global total
                 grass_consumed = min(1.0, grass_amount)  # Can't consume more than available
                 grass.amounts[chunk_i, chunk_j] = max(0, grass_amount - 1)
@@ -525,7 +559,7 @@ class Prey(Animal):
             self.x = max(0, min(config.WORLD_WIDTH, self.x))
             self.y = max(0, min(config.WORLD_HEIGHT, self.y))
 
-        if not config.PREY_MATING_SIMULATION:
+        if not self.mating_simulation:
             # Simple reproduction: random chance each round
             self.reproduced = False  # Reset reproduction flag
             if random.random() / 4 < config.PREY_REPRODUCTION_RATE:
@@ -537,7 +571,7 @@ class Prey(Animal):
             # If currently mating, look for a partner (but not if fleeing - fleeing has priority)
             if self.mating and not self.is_fleeing:
                 # Find nearby mating prey using spatial hash for efficiency
-                nearby_prey = prey_hash.get_nearby(self.x, self.y, config.PREY_MATING_SEARCH_DISTANCE)
+                nearby_prey = prey_hash.get_nearby(self.x, self.y, self.mating_search_distance)
                 
                 best_mate = None
                 min_dist_sq = float('inf')
@@ -548,7 +582,7 @@ class Prey(Animal):
                     dx = other.x - self.x
                     dy = other.y - self.y
                     dist_sq = dx*dx + dy*dy
-                    if dist_sq < config.PREY_MATING_SEARCH_DISTANCE**2 and dist_sq < min_dist_sq:
+                    if dist_sq < self.mating_search_distance**2 and dist_sq < min_dist_sq:
                         min_dist_sq = dist_sq
                         best_mate = other
                 
@@ -564,8 +598,8 @@ class Prey(Animal):
                         dist = min_dist_sq ** 0.5 or 1
                         dx = best_mate.x - self.x
                         dy = best_mate.y - self.y
-                        self.x += (dx / dist) * config.PREY_SPEED
-                        self.y += (dy / dist) * config.PREY_SPEED
+                        self.x += (dx / dist) * self.speed
+                        self.y += (dy / dist) * self.speed
                         # Boundary checks after mating movement
                         self.x = max(0, min(config.WORLD_WIDTH, self.x))
                         self.y = max(0, min(config.WORLD_HEIGHT, self.y))
@@ -573,3 +607,16 @@ class Prey(Animal):
             # Random chance to enter mating mode (if not already mating)
             if not self.mating and random.random() < config.PREY_REPRODUCTION_RATE:
                 self.mating = True
+
+    def inherit_traits(self, partner: Prey) -> Prey:
+        """Create a new prey with traits inherited from this prey and a partner.
+        
+        Args:
+            partner: The other parent prey.
+            
+        Returns:
+            A new Prey with inherited traits.
+        """
+        child = Prey(self.x, self.y, generation=max(self.generation, partner.generation) + 1)
+        # For now, child inherits default traits - can be extended for evolutionary inheritance
+        return child

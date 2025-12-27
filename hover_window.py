@@ -74,6 +74,9 @@ class HoverWindow:
         mating_bool = animal.mating
         self.lines.append(f"Mating: " + ("Yes" if mating_bool else "No"))
 
+        offspring_created = animal.offspring_created
+        self.lines.append(f"Offspring Cnt: {offspring_created}")
+
 
         self.lines.append(f"Position: ({int(animal.x)}, {int(animal.y)})")
 
