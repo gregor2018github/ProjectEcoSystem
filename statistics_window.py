@@ -203,6 +203,12 @@ class StatisticsWindow:
         self.last_pop_limit = get_limit_value(self.pop_limit_dropdown.get_value())
         self.last_phase_limit = get_limit_value(self.phase_limit_dropdown.get_value())
 
+        # Population mode: 0: Relative, 1: Absolute
+        self.pop_mode = 0
+        self.pop_mode_btn_rect = pygame.Rect(self.pop_limit_dropdown.rect.left - 190, self.pop_limit_dropdown.rect.top, 180, 20)
+        self.last_max_animal = 1.0
+        self.last_max_grass = 1.0
+
     def run(self) -> bool:
         """Run the statistics window event loop.
         
@@ -220,7 +226,9 @@ class StatisticsWindow:
             rect: pygame.Rect,
             series: list[int | float],
             color: tuple[int, int, int],
-            limit: int = config.POPULATION_GRAPH_LIMIT
+            limit: int = config.POPULATION_GRAPH_LIMIT,
+            min_val: float | None = None,
+            max_val: float | None = None
         ) -> None:
             """Draw a line chart on the given surface.
             
@@ -230,6 +238,8 @@ class StatisticsWindow:
                 series: List of numeric values to plot.
                 color: RGB tuple for the line color.
                 limit: Maximum number of data points to display.
+                min_val: Optional minimum value for scaling.
+                max_val: Optional maximum value for scaling.
             """
             if len(series) < 2:
                 return
@@ -242,8 +252,11 @@ class StatisticsWindow:
                 return
 
             # Scale series within chart rect
-            min_val = float(min(data_slice))
-            max_val = float(max(data_slice))
+            if min_val is None:
+                min_val = float(min(data_slice))
+            if max_val is None:
+                max_val = float(max(data_slice))
+                
             if max_val == min_val:
                 max_val += 1
             points = []
@@ -367,6 +380,36 @@ class StatisticsWindow:
             
             y_title_rot = pygame.transform.rotate(y_title_surf, 90)
             surface.blit(y_title_rot, (rect.left - 30, rect.centery - y_title_rot.get_height()//2))
+
+        def draw_pop_labels(
+            surface: pygame.Surface,
+            rect: pygame.Rect,
+            max_animal: float,
+            max_grass: float
+        ) -> None:
+            """Draw axis labels for the absolute population chart."""
+            font = self.font
+            
+            # Left Axis (Prey/Predator)
+            s_min_l = font.render("0", True, (255, 255, 255))
+            s_max_l = font.render(f"{int(max_animal)}", True, (255, 255, 255))
+            surface.blit(s_min_l, (rect.left - s_min_l.get_width() - 5, rect.bottom - s_min_l.get_height()))
+            surface.blit(s_max_l, (rect.left - s_max_l.get_width() - 5, rect.top))
+            
+            # Right Axis (Grass)
+            s_min_r = font.render("0", True, (0, 255, 0))
+            s_max_r = font.render(f"{int(max_grass)}", True, (0, 255, 0))
+            surface.blit(s_min_r, (rect.right + 5, rect.bottom - s_min_r.get_height()))
+            surface.blit(s_max_r, (rect.right + 5, rect.top))
+            
+            # Axis Titles
+            l_title = font.render("Prey/Pred Count", True, (255, 255, 255))
+            l_title_rot = pygame.transform.rotate(l_title, 90)
+            surface.blit(l_title_rot, (rect.left - 30, rect.centery - l_title_rot.get_height()//2))
+            
+            r_title = font.render("Grass Count", True, (0, 255, 0))
+            r_title_rot = pygame.transform.rotate(r_title, 270)
+            surface.blit(r_title_rot, (rect.right + 15, rect.centery - r_title_rot.get_height()//2))
 
         def draw_phase_hover(
             surface: pygame.Surface,
@@ -634,6 +677,11 @@ class StatisticsWindow:
                         register_button_click(self.toggle_sim_rect)
                         play_click_sound()
                         self.simulation_running = not self.simulation_running
+                    elif self.pop_mode_btn_rect.collidepoint(event.pos):
+                        register_button_click(self.pop_mode_btn_rect)
+                        play_click_sound()
+                        self.pop_mode = 1 - self.pop_mode
+                        self.last_pop_update = -1 # Force redraw
                     
                     # Check phase diagram mode buttons
                     for i, btn_rect in enumerate(self.mode_btns):
@@ -681,9 +729,36 @@ class StatisticsWindow:
             if config.rounds_passed - self.last_pop_update >= config.UPDATE_SPEED_POPULATION_GRAPH or self.last_pop_update == -1:
                 self.pop_chart_surf.fill((30, 30, 30))
                 temp_rect = pygame.Rect(0, 0, self.pop_chart_rect.width, self.pop_chart_rect.height)
-                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Prey Count"], (255,255,255), limit=pop_limit)
-                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Predator Count"], (255,0,0), limit=pop_limit)
-                draw_line_chart(self.pop_chart_surf, temp_rect, config.stats_history["Grass Total"], (0,255,0), limit=pop_limit)
+                
+                prey_data = config.stats_history["Prey Count"]
+                pred_data = config.stats_history["Predator Count"]
+                grass_data = config.stats_history["Grass Total"]
+                
+                if self.pop_mode == 0: # Relative
+                    draw_line_chart(self.pop_chart_surf, temp_rect, prey_data, (255,255,255), limit=pop_limit)
+                    draw_line_chart(self.pop_chart_surf, temp_rect, pred_data, (255,0,0), limit=pop_limit)
+                    draw_line_chart(self.pop_chart_surf, temp_rect, grass_data, (0,255,0), limit=pop_limit)
+                else: # Absolute
+                    # Slice data to limit for max calculation
+                    start_idx = max(0, len(prey_data) - pop_limit)
+                    prey_slice = prey_data[start_idx:]
+                    pred_slice = pred_data[start_idx:]
+                    grass_slice = grass_data[start_idx:]
+                    
+                    max_animal = max(max(prey_slice, default=0), max(pred_slice, default=0))
+                    if max_animal == 0: max_animal = 1
+                    
+                    max_grass = max(grass_slice, default=0)
+                    if max_grass == 0: max_grass = 1
+                    
+                    draw_line_chart(self.pop_chart_surf, temp_rect, prey_data, (255,255,255), limit=pop_limit, min_val=0, max_val=max_animal)
+                    draw_line_chart(self.pop_chart_surf, temp_rect, pred_data, (255,0,0), limit=pop_limit, min_val=0, max_val=max_animal)
+                    draw_line_chart(self.pop_chart_surf, temp_rect, grass_data, (0,255,0), limit=pop_limit, min_val=0, max_val=max_grass)
+                    
+                    # Store max values for label drawing
+                    self.last_max_animal = max_animal
+                    self.last_max_grass = max_grass
+                    
                 self.last_pop_update = config.rounds_passed
 
             # Update phase diagram surface
@@ -726,8 +801,9 @@ class StatisticsWindow:
             pygame.draw.rect(self.stat_screen, (200,200,200), self.event_chart_rect, 1)
             pygame.draw.rect(self.stat_screen, (200,200,200), self.stats_table_rect, 1)
             
+            pop_title = "Relative Population Graph" if self.pop_mode == 0 else "Absolute Population Graph"
             header_parts = [
-                ( "Population (", (255,255,255) ),
+                ( f"{pop_title} (", (255,255,255) ),
                 ( "Prey", (255,255,255) ),
                 ( ", ", (255,255,255) ),
                 ( "Predator", (255,0,0) ),
@@ -741,6 +817,14 @@ class StatisticsWindow:
                 part = self.font.render(text, True, color)
                 self.stat_screen.blit(part, (x_offset, y_offset))
                 x_offset += part.get_width()
+
+            # Draw population mode button
+            pop_btn_text = "Absolute Mode" if self.pop_mode == 0 else "Relative Mode"
+            draw_button(self.stat_screen, self.pop_mode_btn_rect, pop_btn_text, self.font, mouse_pos)
+
+            # Draw population labels in absolute mode
+            if self.pop_mode == 1:
+                draw_pop_labels(self.stat_screen, self.pop_chart_rect, self.last_max_animal, self.last_max_grass)
 
             # Phase Diagram Header and Mode Selection
             mode_names = ["Pred vs Prey", "Pred vs Grass", "Prey vs Grass"]

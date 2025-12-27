@@ -16,10 +16,6 @@
 
 - [ ] Update Git page with new screenshots and littel video of the simulation running
 
-- [ ] Add better mating system that requires two animals to interact, currently new animals spawn randomly
-  - [ ] Animals need new mating state
-  - [ ] Keep track of generational statistics
-
 - [ ] Add heritage of traits from parents to children
   - [ ] give every induvidual unique properties instead of hardcoded values from settings
   - [ ] add mixing algorithm (distribution of finite amount of points between different traits to avoid overpowered animals)
@@ -30,6 +26,10 @@
  
 ### Done ✓
 
+- [x] Population graph y-axis can switch between relative and absolute mode by button
+- [x] Add better mating system that requires two animals to interact, currently new animals spawn randomly
+  - [x] Animals need new mating state
+  - [x] Keep track of generational statistics
 - [x] Limit the Frame Rate for the simulation view only with the settings from the start screen
 - [x] In statistics screen limit the Frame Rate to 60 when paused, otherwise unlimited
 - [x] Add click sounds to the button and dropdowns in the start screen
