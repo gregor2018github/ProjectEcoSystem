@@ -1,8 +1,14 @@
 ### Todo
 
+- [ ] Show selected traits of animals in the hover statistics
+- [ ] add new button to statistics window to allow changing the population graph to a property line graph of a selected trait (e.g. average speed of predators over time)
+  - [ ] collect data for selected trait over time in every round to list  
+  - [ ] add dropdown to select the trait to be shown
 
-
-
+- [ ] Optimize the inheritance algorithm to avoid overpowered animals that keel the ecosystem
+  - [ ] define positive and negative traits (maybe even with half points)
+  - [ ] implement budget function that limits the total amount of points that can be distributed among traits
+  - [ ] try to remove the property "predator fears predator" from inheritance as it really destroys the balance of the ecosystem
 
 - [ ] Add more information to the table in the statistics window
   - [ ] Total current population (predators and preys)
@@ -16,16 +22,15 @@
 
 - [ ] Update Git page with new screenshots and littel video of the simulation running
 
-- [ ] Add heritage of traits from parents to children
-  - [ ] give every induvidual unique properties instead of hardcoded values from settings
-  - [ ] add mixing algorithm (distribution of finite amount of points between different traits to avoid overpowered animals)
-
 - [ ] Multithreading for better performance
   - [ ] separate predator and prey updates into different threads
   - [ ] subthreads per animal group (negative effects of unfair advantages for animals late in the queue should be minimal)
  
 ### Done ✓
 
+- [x] Add heritage of traits from parents to children
+  - [x] give every induvidual unique properties instead of hardcoded values from settings
+  - [x] add mixing algorithm (distribution of finite amount of points between different traits to avoid overpowered animals)
 - [x] Population graph y-axis can switch between relative and absolute mode by button
 - [x] Add better mating system that requires two animals to interact, currently new animals spawn randomly
   - [x] Animals need new mating state
