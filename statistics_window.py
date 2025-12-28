@@ -643,6 +643,145 @@ class StatisticsWindow:
                 surface.blit(value_surf, (col2_x - value_surf.get_width(), start_y))
                 
                 start_y += line_height
+            
+            # Helper function to get trait stats (min, max, avg)
+            def get_trait_stats(animals, trait_name):
+                if not animals:
+                    return (0, 0, 0)
+                values = [getattr(a, trait_name) for a in animals]
+                return (min(values), max(values), sum(values) / len(values))
+            
+            # Format trait value based on magnitude
+            def fmt_val(v):
+                if abs(v) >= 100:
+                    return f"{v:.0f}"
+                elif abs(v) >= 10:
+                    return f"{v:.1f}"
+                elif abs(v) >= 1:
+                    return f"{v:.2f}"
+                else:
+                    return f"{v:.3f}"
+            
+            # Draw evolutionary traits section
+            # Start a new section on the right side of the table
+            trait_start_x = col2_x + 40
+            trait_start_y = rect.top + 20
+            
+            # Column headers
+            header_surf = self.font.render("Trait", True, (200, 200, 200))
+            surface.blit(header_surf, (trait_start_x, trait_start_y))
+            
+            min_header = self.font.render("Min", True, (150, 200, 150))
+            max_header = self.font.render("Max", True, (200, 150, 150))
+            avg_header = self.font.render("Avg", True, (150, 150, 200))
+            base_header = self.font.render("Base", True, (200, 200, 150))
+            diff_header = self.font.render("Diff %", True, (200, 150, 200))
+            
+            col_min_x = trait_start_x + 120
+            col_max_x = col_min_x + 70
+            col_avg_x = col_max_x + 70
+            col_base_x = col_avg_x + 70
+            col_diff_x = col_base_x + 70
+            
+            surface.blit(min_header, (col_min_x, trait_start_y))
+            surface.blit(max_header, (col_max_x, trait_start_y))
+            surface.blit(avg_header, (col_avg_x, trait_start_y))
+            surface.blit(base_header, (col_base_x, trait_start_y))
+            surface.blit(diff_header, (col_diff_x, trait_start_y))
+            
+            trait_start_y += line_height
+            
+            # Predator traits section
+            pred_header = self.font.render("-- Predator Traits --", True, (255, 100, 100))
+            surface.blit(pred_header, (trait_start_x, trait_start_y))
+            trait_start_y += line_height
+            
+            predator_traits = [
+                ("Speed", "speed", config.PREDATOR_SPEED),
+                ("Avoid Dist", "predator_avoid_distance", config.PREDATOR_PREDATOR_AVOID_DISTANCE),
+                ("Smell Dist", "smell_distance", config.PREDATOR_SMELL_DISTANCE),
+                ("Max Food", "max_food", config.PREDATOR_MAX_FOOD),
+                ("Food/Kill", "food_gain_per_kill", config.PREDATOR_FOOD_GAIN_PER_KILL),
+                ("Energy Cost", "regular_energy_cost", config.PREDATOR_REGULAR_ENERGY_COST),
+                ("Hunt Cost", "hunting_energy_cost", config.PREDATOR_HUNTING_ENERGY_COST),
+                ("Starv Border", "starv_border", config.PREDATOR_STARV_BORDER),
+                ("Max Age", "max_age", config.PREDATOR_MAX_AGE),
+                ("High Age HP", "high_age_health", config.PREDATOR_HIGH_AGE_HEALTH),
+                ("Mate Dist", "mating_search_distance", config.PREDATOR_MATING_SEARCH_DISTANCE),
+            ]
+            
+            for display_name, attr_name, base_value in predator_traits:
+                min_v, max_v, avg_v = get_trait_stats(self.predators, attr_name)
+                
+                # Calculate percentage difference from base (using average)
+                if base_value != 0:
+                    diff_pct = ((avg_v - base_value) / base_value) * 100
+                else:
+                    diff_pct = 0.0
+                
+                diff_str = f"{diff_pct:+.1f}%"
+                
+                name_surf = self.font.render(display_name, True, (180, 180, 180))
+                min_surf = self.font.render(fmt_val(min_v), True, (150, 200, 150))
+                max_surf = self.font.render(fmt_val(max_v), True, (200, 150, 150))
+                avg_surf = self.font.render(fmt_val(avg_v), True, (150, 150, 200))
+                base_surf = self.font.render(fmt_val(base_value), True, (200, 200, 150))
+                diff_surf = self.font.render(diff_str, True, (200, 150, 200))
+                
+                surface.blit(name_surf, (trait_start_x, trait_start_y))
+                surface.blit(min_surf, (col_min_x, trait_start_y))
+                surface.blit(max_surf, (col_max_x, trait_start_y))
+                surface.blit(avg_surf, (col_avg_x, trait_start_y))
+                surface.blit(base_surf, (col_base_x, trait_start_y))
+                surface.blit(diff_surf, (col_diff_x, trait_start_y))
+                
+                trait_start_y += line_height
+            
+            trait_start_y += 5  # Small gap between sections
+            
+            # Prey traits section
+            prey_header = self.font.render("-- Prey Traits --", True, (200, 200, 255))
+            surface.blit(prey_header, (trait_start_x, trait_start_y))
+            trait_start_y += line_height
+            
+            prey_traits = [
+                ("Speed", "speed", config.PREY_SPEED),
+                ("Fear Dist", "fear_distance", config.PREY_FEAR_DISTANCE),
+                ("Mate Dist", "mating_search_distance", config.PREY_MATING_SEARCH_DISTANCE),
+                ("Max Food", "max_food", config.PREY_MAX_FOOD),
+                ("Food/Grass", "food_gain_per_grass", config.PREY_FOOD_GAIN_PER_GRASS),
+                ("Starv Border", "starv_border", config.PREY_STARV_BORDER),
+                ("Flee Cost", "flee_energy_cost", config.PREY_FLEE_ENERGY_COST),
+                ("Max Age", "max_age", config.PREY_MAX_AGE),
+                ("High Age HP", "high_age_health", config.PREY_HIGH_AGE_HEALTH),
+            ]
+            
+            for display_name, attr_name, base_value in prey_traits:
+                min_v, max_v, avg_v = get_trait_stats(self.preys, attr_name)
+                
+                # Calculate percentage difference from base (using average)
+                if base_value != 0:
+                    diff_pct = ((avg_v - base_value) / base_value) * 100
+                else:
+                    diff_pct = 0.0
+                
+                diff_str = f"{diff_pct:+.1f}%"
+                
+                name_surf = self.font.render(display_name, True, (180, 180, 180))
+                min_surf = self.font.render(fmt_val(min_v), True, (150, 200, 150))
+                max_surf = self.font.render(fmt_val(max_v), True, (200, 150, 151))
+                avg_surf = self.font.render(fmt_val(avg_v), True, (150, 150, 200))
+                base_surf = self.font.render(fmt_val(base_value), True, (200, 200, 150))
+                diff_surf = self.font.render(diff_str, True, (200, 150, 200))
+                
+                surface.blit(name_surf, (trait_start_x, trait_start_y))
+                surface.blit(min_surf, (col_min_x, trait_start_y))
+                surface.blit(max_surf, (col_max_x, trait_start_y))
+                surface.blit(avg_surf, (col_avg_x, trait_start_y))
+                surface.blit(base_surf, (col_base_x, trait_start_y))
+                surface.blit(diff_surf, (col_diff_x, trait_start_y))
+                
+                trait_start_y += line_height
 
         while self.running_stats:
             # Track frame time for FPS calculation
