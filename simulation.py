@@ -78,18 +78,28 @@ def update_simulation(
     config.predator_deceased += (predators_before - len(predators))
     config.prey_deceased += (preys_before - len(preys))
     
-    # Reproduction: Preys still reproduce randomly
+    # Reproduction: Preys reproduce with trait inheritance
     new_preys = []
     for p in preys:
         if p.reproduced:
             number_preys_born = random.randint(1, 4)  # Each reproduction event spawns 1 to 4 new preys
             for _ in range(number_preys_born):
-                new_preys.append(Prey(p.x, p.y, generation=p.generation + 1))
+                if p.mating_partner is not None:
+                    # Use evolutionary inheritance from both parents
+                    child = p.inherit_traits(p.mating_partner)
+                    # Add slight position offset to avoid overlap
+                    child.x += random.uniform(-5, 5)
+                    child.y += random.uniform(-5, 5)
+                    new_preys.append(child)
+                else:
+                    # Fallback for simple reproduction (no mating partner)
+                    new_preys.append(Prey(p.x, p.y, generation=p.generation + 1))
             config.prey_born += number_preys_born
             p.offspring_created += number_preys_born
+            p.mating_partner = None  # Clear partner reference after reproduction
     preys.extend(new_preys)
     
-    # Reproduction: Predators now reproduce via mating after a kill
+    # Reproduction: Predators reproduce via mating with trait inheritance
     new_predators = []
     for p in predators:
         if p.reproduced:
@@ -97,10 +107,19 @@ def update_simulation(
             for _ in range(number_predators_born):
                 rand_x_dist = random.uniform(10, 15)*random.choice([-1, 1])
                 rand_y_dist = random.uniform(10, 15)*random.choice([-1, 1])
-                new_predators.append(Predator(p.x + rand_x_dist, p.y + rand_y_dist, generation=p.generation + 1))
+                if p.mating_partner is not None:
+                    # Use evolutionary inheritance from both parents
+                    child = p.inherit_traits(p.mating_partner)
+                    child.x += rand_x_dist
+                    child.y += rand_y_dist
+                    new_predators.append(child)
+                else:
+                    # Fallback (shouldn't happen for predators since they require mating)
+                    new_predators.append(Predator(p.x + rand_x_dist, p.y + rand_y_dist, generation=p.generation + 1))
             config.predator_born += number_predators_born
             p.reproduced = False  # Reset flag after reproduction
             p.offspring_created += number_predators_born
+            p.mating_partner = None  # Clear partner reference after reproduction
     predators.extend(new_predators)
     
     # Increment simulation round

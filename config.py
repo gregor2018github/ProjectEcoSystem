@@ -24,6 +24,12 @@ CHUNKSIZE = 10  # 10x10 pixels
 total_grass = 0.0
 
 ################################################
+# Evolution settings
+################################################
+
+MUTATION_RATE = 0.05  # 5% mutation - increment is ±(MUTATION_RATE * base_value)
+
+################################################
 # PREDATOR behavior
 ################################################
 

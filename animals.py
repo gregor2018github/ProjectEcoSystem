@@ -47,6 +47,7 @@ class Animal(ABC):
         self.killed = False  # attribute to track kill events
         self.mating = False  # True if animal is trying to mate this round
         self.reproduced = False  # animal can raise reproduction signal to simulation module (there new animal will be spawned)
+        self.mating_partner: Animal | None = None  # Reference to mating partner for trait inheritance
         self.age = 0
         self.cur_consumption = 0.0
         self.generation = 0  # Track generation for statistics  
@@ -307,6 +308,7 @@ class Predator(Animal):
                     if min_dist_sq <= config.PREDATOR_MATING_CLOSE_DISTANCE**2:
                         # Mating successful! One predator reproduces, both stop mating
                         self.reproduced = True
+                        self.mating_partner = best_mate  # Store partner for trait inheritance
                         self.mating = False
                         best_mate.mating = False
                     else:
@@ -368,6 +370,12 @@ class Predator(Animal):
     def inherit_traits(self, partner: Predator) -> Predator:
         """Create a new predator with traits inherited from this predator and a partner.
         
+        The child's trait value is calculated as:
+        1. Random value between parent1's trait and parent2's trait
+        2. Plus/minus a random mutation (±MUTATION_RATE * base_value from config)
+        
+        Using base values for mutation prevents multiplicative drift.
+        
         Args:
             partner: The other parent predator.
             
@@ -375,7 +383,49 @@ class Predator(Animal):
             A new Predator with inherited traits.
         """
         child = Predator(self.x, self.y, generation=max(self.generation, partner.generation) + 1)
-        # For now, child inherits default traits - can be extended for evolutionary inheritance
+        
+        # Helper function to inherit a trait with mutation
+        def inherit_trait(p1_val: float, p2_val: float, base_val: float) -> float:
+            # Random value between the two parents
+            inherited = random.uniform(min(p1_val, p2_val), max(p1_val, p2_val))
+            # Mutation: ±(MUTATION_RATE * base_value) to prevent multiplicative drift
+            mutation = random.uniform(-config.MUTATION_RATE, config.MUTATION_RATE) * base_val
+            return max(0.001, inherited + mutation)  # Ensure positive values
+        
+        # Inherit all evolutionary traits
+        child.speed = inherit_trait(self.speed, partner.speed, config.PREDATOR_SPEED)
+        child.predator_avoid_distance = inherit_trait(
+            self.predator_avoid_distance, partner.predator_avoid_distance, 
+            config.PREDATOR_PREDATOR_AVOID_DISTANCE
+        )
+        child.smell_distance = inherit_trait(
+            self.smell_distance, partner.smell_distance, config.PREDATOR_SMELL_DISTANCE
+        )
+        child.max_food = inherit_trait(self.max_food, partner.max_food, config.PREDATOR_MAX_FOOD)
+        child.food_gain_per_kill = inherit_trait(
+            self.food_gain_per_kill, partner.food_gain_per_kill, config.PREDATOR_FOOD_GAIN_PER_KILL
+        )
+        child.regular_energy_cost = inherit_trait(
+            self.regular_energy_cost, partner.regular_energy_cost, config.PREDATOR_REGULAR_ENERGY_COST
+        )
+        child.hunting_energy_cost = inherit_trait(
+            self.hunting_energy_cost, partner.hunting_energy_cost, config.PREDATOR_HUNTING_ENERGY_COST
+        )
+        child.starv_border = inherit_trait(
+            self.starv_border, partner.starv_border, config.PREDATOR_STARV_BORDER
+        )
+        child.max_age = inherit_trait(self.max_age, partner.max_age, config.PREDATOR_MAX_AGE)
+        child.high_age_health = min(1.0, inherit_trait(
+            self.high_age_health, partner.high_age_health, config.PREDATOR_HIGH_AGE_HEALTH
+        ))  # Cap at 1.0 for probability
+        child.mating_search_distance = inherit_trait(
+            self.mating_search_distance, partner.mating_search_distance, 
+            config.PREDATOR_MATING_SEARCH_DISTANCE
+        )
+        
+        # Initialize food to the child's own max_food
+        child.food = child.max_food
+        
         return child
 
 ###############################################
@@ -591,6 +641,7 @@ class Prey(Animal):
                     if min_dist_sq <= config.PREY_MATING_CLOSE_DISTANCE**2:
                         # Mating successful! One prey reproduces, both stop mating
                         self.reproduced = True
+                        self.mating_partner = best_mate  # Store partner for trait inheritance
                         self.mating = False
                         best_mate.mating = False
                     else:
@@ -611,6 +662,12 @@ class Prey(Animal):
     def inherit_traits(self, partner: Prey) -> Prey:
         """Create a new prey with traits inherited from this prey and a partner.
         
+        The child's trait value is calculated as:
+        1. Random value between parent1's trait and parent2's trait
+        2. Plus/minus a random mutation (±MUTATION_RATE * base_value from config)
+        
+        Using base values for mutation prevents multiplicative drift.
+        
         Args:
             partner: The other parent prey.
             
@@ -618,5 +675,42 @@ class Prey(Animal):
             A new Prey with inherited traits.
         """
         child = Prey(self.x, self.y, generation=max(self.generation, partner.generation) + 1)
-        # For now, child inherits default traits - can be extended for evolutionary inheritance
+        
+        # Helper function to inherit a trait with mutation
+        def inherit_trait(p1_val: float, p2_val: float, base_val: float) -> float:
+            # Random value between the two parents
+            inherited = random.uniform(min(p1_val, p2_val), max(p1_val, p2_val))
+            # Mutation: ±(MUTATION_RATE * base_value) to prevent multiplicative drift
+            mutation = random.uniform(-config.MUTATION_RATE, config.MUTATION_RATE) * base_val
+            return max(0.001, inherited + mutation)  # Ensure positive values
+        
+        # Inherit all evolutionary traits
+        child.speed = inherit_trait(self.speed, partner.speed, config.PREY_SPEED)
+        child.fear_distance = inherit_trait(
+            self.fear_distance, partner.fear_distance, config.PREY_FEAR_DISTANCE
+        )
+        # mating_simulation is a boolean flag, inherit from random parent
+        child.mating_simulation = random.choice([self.mating_simulation, partner.mating_simulation])
+        child.mating_search_distance = inherit_trait(
+            self.mating_search_distance, partner.mating_search_distance, 
+            config.PREY_MATING_SEARCH_DISTANCE
+        )
+        child.max_food = inherit_trait(self.max_food, partner.max_food, config.PREY_MAX_FOOD)
+        child.food_gain_per_grass = inherit_trait(
+            self.food_gain_per_grass, partner.food_gain_per_grass, config.PREY_FOOD_GAIN_PER_GRASS
+        )
+        child.starv_border = inherit_trait(
+            self.starv_border, partner.starv_border, config.PREY_STARV_BORDER
+        )
+        child.flee_energy_cost = inherit_trait(
+            self.flee_energy_cost, partner.flee_energy_cost, config.PREY_FLEE_ENERGY_COST
+        )
+        child.max_age = inherit_trait(self.max_age, partner.max_age, config.PREY_MAX_AGE)
+        child.high_age_health = min(1.0, inherit_trait(
+            self.high_age_health, partner.high_age_health, config.PREY_HIGH_AGE_HEALTH
+        ))  # Cap at 1.0 for probability
+        
+        # Initialize food to the child's own max_food
+        child.food = child.max_food
+        
         return child
