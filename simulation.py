@@ -126,8 +126,10 @@ def update_simulation(
     config.rounds_passed += 1
 
     # Update all grass in one vectorized operation (MUCH faster than individual updates)
-    grass_growth = grass.update()
-    config.total_grass += grass_growth
+    grass.update()
+
+    # Recompute total grass from the array each tick to avoid floating-point drift
+    config.total_grass = grass.get_total()
 
     # Update stats history (using the updated separate lists)
     config.stats_history["Prey Count"].append(len(preys))

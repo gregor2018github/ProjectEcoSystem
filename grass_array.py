@@ -41,21 +41,11 @@ class GrassArray:
         self._grass_surface: pygame.Surface | None = None
         self._last_visible_size: tuple[int, int] = (0, 0)
     
-    def update(self) -> float:
-        """Update all grass in one vectorized operation.
-        
-        Returns:
-            The total change in grass amount (for tracking).
-        """
-        # Calculate how much each cell can grow (capped at max)
-        old_total = self.amounts.sum()
-        
+    def update(self) -> None:
+        """Update all grass in one vectorized operation."""
         # Vectorized growth: add growth rate, then clip to max
         self.amounts += config.GRASS_GROWTH_RATE
         np.clip(self.amounts, 0, config.GRASS_MAX_AMOUNT, out=self.amounts)
-        
-        new_total = self.amounts.sum()
-        return new_total - old_total
     
     def get_amount(self, i: int, j: int) -> float:
         """Get grass amount at a specific chunk.

@@ -600,10 +600,8 @@ class Prey(Animal):
                     self.is_eating = True
                     self.grass_eaten += gain
                 self.food = min(self.max_food, self.food + gain)
-                # Track grass consumed for global total
-                grass_consumed = min(1.0, grass_amount)  # Can't consume more than available
+                # Consume grass from the cell (up to 1 unit per tick)
                 grass.amounts[chunk_i, chunk_j] = max(0, grass_amount - 1)
-                config.total_grass -= grass_consumed
         else:
             # Boundary checks if outside grass bounds
             self.x = max(0, min(config.WORLD_WIDTH, self.x))
