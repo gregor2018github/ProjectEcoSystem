@@ -590,13 +590,14 @@ class StatisticsWindow:
             prey_count = config.stats_history["Prey Count"][-1] if config.stats_history["Prey Count"] else 0
             pred_count = config.stats_history["Predator Count"][-1] if config.stats_history["Predator Count"] else 0
             grass_count = round(float(config.stats_history["Grass Total"][-1]) / 1000) if config.stats_history["Grass Total"] else 0
-            
+            total_population = prey_count + pred_count
+
             max_prey = max(config.stats_history["Prey Count"]) if config.stats_history["Prey Count"] else 0
             max_pred = max(config.stats_history["Predator Count"]) if config.stats_history["Predator Count"] else 0
-            
+
             avg_prey = sum(config.stats_history["Prey Count"]) / len(config.stats_history["Prey Count"]) if config.stats_history["Prey Count"] else 0
             avg_pred = sum(config.stats_history["Predator Count"]) / len(config.stats_history["Predator Count"]) if config.stats_history["Predator Count"] else 0
-            
+
             ratio = prey_count / pred_count if pred_count > 0 else float('inf')
 
             highest_prey_gen = max((p.generation for p in self.preys), default=0)
@@ -604,24 +605,63 @@ class StatisticsWindow:
 
             highest_pred_gen = max((p.generation for p in self.predators), default=0)
             lowest_pred_gen = min((p.generation for p in self.predators), default=0)
-            
+
+            # Average age
+            avg_prey_age = sum(p.age for p in self.preys) / len(self.preys) if self.preys else 0
+            avg_pred_age = sum(p.age for p in self.predators) / len(self.predators) if self.predators else 0
+
+            # Average energy
+            avg_prey_energy = sum(p.food for p in self.preys) / len(self.preys) if self.preys else 0
+            avg_pred_energy = sum(p.food for p in self.predators) / len(self.predators) if self.predators else 0
+
+            # Last 100 rounds stats (computed from cumulative history)
+            def last_n_delta(key, n=100):
+                hist = config.stats_history[key]
+                if not hist:
+                    return 0
+                current = hist[-1]
+                past = hist[-n] if len(hist) >= n else hist[0]
+                return current - past
+
+            hunted_last_100 = last_n_delta("Prey dead by hunting")
+            starved_prey_last_100 = last_n_delta("Prey dead by starvation")
+            starved_pred_last_100 = last_n_delta("Predator dead by starvation")
+            aged_prey_last_100 = last_n_delta("Prey dead by age")
+            aged_pred_last_100 = last_n_delta("Predator dead by age")
+            born_prey_last_100 = last_n_delta("Prey born")
+            born_pred_last_100 = last_n_delta("Predator born")
+
             rows = [
                 ("Statistic", "Value"),
                 ("-" * 20, "-" * 10),
+                ("Total Population", f"{total_population}"),
                 ("Current Prey", f"{prey_count}"),
                 ("Current Predator", f"{pred_count}"),
                 ("Current Grass", f"{grass_count} K"),
                 ("", ""),
+                ("Avg Prey Age", f"{avg_prey_age:.1f}"),
+                ("Avg Predator Age", f"{avg_pred_age:.1f}"),
+                ("Avg Prey Energy", f"{avg_prey_energy:.1f}"),
+                ("Avg Predator Energy", f"{avg_pred_energy:.1f}"),
+                ("", ""),
                 ("Max Prey", f"{max_prey}"),
                 ("Max Predator", f"{max_pred}"),
-                ("", ""),
                 ("Avg Prey", f"{avg_prey:.1f}"),
                 ("Avg Predator", f"{avg_pred:.1f}"),
-                ("", ""),
                 ("Prey/Predator Ratio", f"{ratio:.2f}"),
                 ("", ""),
                 ("Prey Gen Range", f"{lowest_prey_gen} - {highest_prey_gen}"),
                 ("Predator Gen Range", f"{lowest_pred_gen} - {highest_pred_gen}"),
+                ("", ""),
+                ("-- Last 100 Rounds --", ""),
+                ("Hunted (Prey killed)", f"{hunted_last_100}"),
+                ("Starved (Prey)", f"{starved_prey_last_100}"),
+                ("Starved (Predator)", f"{starved_pred_last_100}"),
+                ("Died of Age (Prey)", f"{aged_prey_last_100}"),
+                ("Died of Age (Predator)", f"{aged_pred_last_100}"),
+                ("Born (Prey)", f"{born_prey_last_100}"),
+                ("Born (Predator)", f"{born_pred_last_100}"),
+                ("Total Born", f"{born_prey_last_100 + born_pred_last_100}"),
             ]
             
             line_height = 20

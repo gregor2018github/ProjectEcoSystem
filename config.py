@@ -90,7 +90,7 @@ STATS_LINE_HEIGHT = 20
 
 UPDATE_SPEED_POPULATION_GRAPH = 30
 UPDATE_SPEED_PHASE_GRAPH = 30
-UPDATE_SPEED_TABLE = 50
+UPDATE_SPEED_TABLE = 70
 
 PHASE_DIAGRAM_LIMIT = 20000
 POPULATION_GRAPH_LIMIT = 20000
@@ -193,5 +193,10 @@ stats_history = {
     "Predator deceased": [],
     "Prey born": [],
     "Predator born": [],
-    "Rounds passed": []
+    "Rounds passed": [],
+    "Prey dead by hunting": [],
+    "Prey dead by starvation": [],
+    "Predator dead by starvation": [],
+    "Prey dead by age": [],
+    "Predator dead by age": [],
 }

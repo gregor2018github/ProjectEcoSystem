@@ -180,3 +180,6 @@ test_lab*
 
 # files from performance profiling
 *.prof
+
+# claude code files
+.claude

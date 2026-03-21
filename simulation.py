@@ -140,3 +140,8 @@ def update_simulation(
     config.stats_history["Prey born"].append(config.prey_born)
     config.stats_history["Predator born"].append(config.predator_born)
     config.stats_history["Rounds passed"].append(config.rounds_passed)
+    config.stats_history["Prey dead by hunting"].append(config.prey_dead_by_hunting)
+    config.stats_history["Prey dead by starvation"].append(config.prey_dead_by_starvation)
+    config.stats_history["Predator dead by starvation"].append(config.predator_dead_by_starvation)
+    config.stats_history["Prey dead by age"].append(config.prey_dead_by_age)
+    config.stats_history["Predator dead by age"].append(config.predator_dead_by_age)
