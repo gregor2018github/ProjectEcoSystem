@@ -53,6 +53,16 @@ main.py game loop
 | `settings_window.py` | In-simulation settings editor (scrollable, with cursor blink and arrow-key editing) |
 | `start_screen.py` | Pre-simulation configuration screen (world size, FPS, initial populations) |
 
+Note: `grass.py` is legacy dead code (replaced by `grass_array.py`); nothing imports it.
+
+### Coordinate systems
+
+Two coordinate spaces are used throughout:
+- **World coordinates**: absolute position in the full world (`0..WORLD_WIDTH`, `0..WORLD_HEIGHT`). All animal positions (`animal.x`, `animal.y`), spatial hash lookups, and collision checks use world coords.
+- **Screen coordinates**: world position minus `config.camera_x/camera_y`. Used only for rendering and mouse hit-testing (`get_screen_rect()`).
+
+When adding features, be careful to use the right coordinate space — proximity logic needs world coords, UI/drawing needs screen coords.
+
 ### Evolutionary system
 
 Each `Predator` and `Prey` instance holds its own copy of all evolutionary traits (speed, smell/fear distance, energy costs, max age, etc.) initialized from `config.py` defaults. When two animals mate, `inherit_traits(partner)` creates a child with:
@@ -63,6 +73,12 @@ child_trait = random(min(p1, p2), max(p1, p2)) ± random(0, MUTATION_RATE) × co
 
 Using the config base value for mutation magnitude prevents multiplicative drift across generations.
 
+### Config as global state
+
+`config.py` doubles as both constants and mutable global state. Simulation counters (`prey_born`, `predator_deceased`, etc.), `stats_history` dict, camera position (`camera_x`, `camera_y`), and `current_fps` are all module-level variables in `config.py` that are read/written throughout the codebase. Settings changed at runtime (via the settings window) write directly into `config.*` variables.
+
+**Important caveat:** Runtime setting changes (via `SettingsWindow`) update `config.*` globals, but existing animals keep their per-instance trait copies. Only newly spawned animals pick up the new config defaults. This is by design — evolutionary traits diverge from config over generations.
+
 ### Performance design
 
 - `GrassArray` uses a NumPy array for all grass; growth is a single vectorized `+=` + `clip`. Rendering builds a pixel array via a pre-computed color LUT and blits one scaled surface per frame.
@@ -70,6 +86,10 @@ Using the config base value for mutation magnitude prevents multiplicative drift
 - Animals only draw themselves when within the screen viewport bounds.
 - The statistics window uses `UPDATE_SPEED_*` constants to throttle expensive graph/table redraws.
 
-### Config as global state
+### User controls during simulation
 
-`config.py` doubles as both constants and mutable global state. Simulation counters (`prey_born`, `predator_deceased`, etc.), `stats_history` dict, camera position (`camera_x`, `camera_y`), and `current_fps` are all module-level variables in `config.py` that are read/written throughout the codebase. Settings changed at runtime (via the settings window) write directly into `config.*` variables.
+- **WASD / Arrow keys**: Pan camera
+- **Space**: Pause/resume
+- **Click on animal**: Lock info window to that animal; click elsewhere to unlock
+- **Hover over animal**: Show transient info popup
+- **Right-side buttons**: Exit, Pause, Settings, Add/Remove Predator, Add/Remove Prey, Statistics
