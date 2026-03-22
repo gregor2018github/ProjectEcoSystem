@@ -164,8 +164,8 @@ def process_event(
         elif add_pred_button_rect.collidepoint(mouse_pos):
             register_button_click(add_pred_button_rect)
             play_click_sound()
-            spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM)
-            spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM)
+            spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM / config.zoom_level)
+            spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM / config.zoom_level)
             pred_arrays.add_default(spawn_x, spawn_y)
             event_handled_by_button = True
         elif rem_pred_button_rect.collidepoint(mouse_pos):
@@ -176,8 +176,8 @@ def process_event(
         elif add_prey_button_rect.collidepoint(mouse_pos):
             register_button_click(add_prey_button_rect)
             play_click_sound()
-            spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM)
-            spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM)
+            spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM / config.zoom_level)
+            spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM / config.zoom_level)
             prey_arrays.add_default(spawn_x, spawn_y)
             event_handled_by_button = True
         elif rem_prey_button_rect.collidepoint(mouse_pos):

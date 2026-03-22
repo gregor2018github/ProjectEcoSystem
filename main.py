@@ -16,6 +16,30 @@ from start_screen import show_start_screen
 # Main
 ###############################################
 
+def _apply_zoom(delta: float, screen_cx: int, screen_cy: int) -> None:
+    """Adjust zoom level, keeping the world point under (screen_cx, screen_cy) fixed."""
+    old_zoom = config.zoom_level
+    new_zoom = max(config.ZOOM_MIN, min(config.ZOOM_MAX, old_zoom + delta))
+    if new_zoom == old_zoom:
+        return
+
+    # World point currently under the screen center / cursor
+    world_x = screen_cx / old_zoom + config.camera_x
+    world_y = screen_cy / old_zoom + config.camera_y
+
+    config.zoom_level = new_zoom
+
+    # Adjust camera so that same world point stays under screen_cx/screen_cy
+    config.camera_x = world_x - screen_cx / new_zoom
+    config.camera_y = world_y - screen_cy / new_zoom
+
+    # Clamp camera
+    max_cam_x = max(0, config.WORLD_WIDTH - config.XLIM / new_zoom)
+    max_cam_y = max(0, config.WORLD_HEIGHT - config.YLIM / new_zoom)
+    config.camera_x = max(0, min(max_cam_x, config.camera_x))
+    config.camera_y = max(0, min(max_cam_y, config.camera_y))
+
+
 def main() -> None:
     """Main entry point for the ecosystem simulation.
 
@@ -97,16 +121,31 @@ def main() -> None:
 
         # Handle continuous key presses for camera movement
         keys = pygame.key.get_pressed()
+        # Camera speed in world units (slower when zoomed in so it feels consistent)
+        cam_speed = config.CAMERA_SPEED / config.zoom_level
+        max_cam_x = max(0, config.WORLD_WIDTH - config.XLIM / config.zoom_level)
+        max_cam_y = max(0, config.WORLD_HEIGHT - config.YLIM / config.zoom_level)
         if keys[pygame.K_w] or keys[pygame.K_UP]:
-            config.camera_y = max(0, config.camera_y - config.CAMERA_SPEED)
+            config.camera_y = max(0, config.camera_y - cam_speed)
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            config.camera_y = min(config.WORLD_HEIGHT - config.YLIM, config.camera_y + config.CAMERA_SPEED)
+            config.camera_y = min(max_cam_y, config.camera_y + cam_speed)
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            config.camera_x = max(0, config.camera_x - config.CAMERA_SPEED)
+            config.camera_x = max(0, config.camera_x - cam_speed)
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            config.camera_x = min(config.WORLD_WIDTH - config.XLIM, config.camera_x + config.CAMERA_SPEED)
+            config.camera_x = min(max_cam_x, config.camera_x + cam_speed)
+
+        # Handle continuous zoom with +/- keys
+        if keys[pygame.K_PLUS] or keys[pygame.K_KP_PLUS] or keys[pygame.K_EQUALS]:
+            _apply_zoom(config.ZOOM_STEP, config.XLIM // 2, config.YLIM // 2)
+        if keys[pygame.K_MINUS] or keys[pygame.K_KP_MINUS]:
+            _apply_zoom(-config.ZOOM_STEP, config.XLIM // 2, config.YLIM // 2)
 
         for event in pygame.event.get():
+            # Scroll wheel zoom (button 4 = scroll up, 5 = scroll down)
+            if event.type == pygame.MOUSEWHEEL:
+                _apply_zoom(config.ZOOM_STEP * event.y, *pygame.mouse.get_pos())
+                continue
+
             # Mouse drag panning: defer left-click until we know it's not a drag
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_drag_active = True
@@ -118,8 +157,11 @@ def main() -> None:
                 if not mouse_dragged and (abs(rel_x) > 2 or abs(rel_y) > 2):
                     mouse_dragged = True
                 if mouse_dragged:
-                    config.camera_x = max(0, min(config.WORLD_WIDTH - config.XLIM, config.camera_x - rel_x))
-                    config.camera_y = max(0, min(config.WORLD_HEIGHT - config.YLIM, config.camera_y - rel_y))
+                    # Convert screen-pixel drag to world units
+                    max_cx = max(0, config.WORLD_WIDTH - config.XLIM / config.zoom_level)
+                    max_cy = max(0, config.WORLD_HEIGHT - config.YLIM / config.zoom_level)
+                    config.camera_x = max(0, min(max_cx, config.camera_x - rel_x / config.zoom_level))
+                    config.camera_y = max(0, min(max_cy, config.camera_y - rel_y / config.zoom_level))
                     continue  # Skip process_event so hover doesn't flicker while dragging
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 if not mouse_dragged and pending_click_event is not None:

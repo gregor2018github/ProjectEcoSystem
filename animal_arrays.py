@@ -459,18 +459,22 @@ class PredatorView:
         return "Idle"
 
     def get_screen_rect(self) -> pygame.Rect:
-        screen_x = int(self.x - config.camera_x)
-        screen_y = int(self.y - config.camera_y)
-        return pygame.Rect(screen_x - self.SIZE, screen_y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
+        z = config.zoom_level
+        screen_x = int((self.x - config.camera_x) * z)
+        screen_y = int((self.y - config.camera_y) * z)
+        sz = max(1, int(self.SIZE * z))
+        return pygame.Rect(screen_x - sz, screen_y - sz, 2 * sz, 2 * sz)
 
     def get_rect(self) -> pygame.Rect:
         return pygame.Rect(self.x - self.SIZE, self.y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
 
     def draw(self, screen: pygame.Surface) -> None:
-        screen_x = int(self.x - config.camera_x)
-        screen_y = int(self.y - config.camera_y)
-        if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
-            pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
+        z = config.zoom_level
+        screen_x = int((self.x - config.camera_x) * z)
+        screen_y = int((self.y - config.camera_y) * z)
+        sz = max(1, int(self.SIZE * z))
+        if -sz <= screen_x <= config.XLIM + sz and -sz <= screen_y <= config.YLIM + sz:
+            pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), sz)
 
     @property
     def __class__(self):
@@ -604,18 +608,22 @@ class PreyView:
         return "Idle"
 
     def get_screen_rect(self) -> pygame.Rect:
-        screen_x = int(self.x - config.camera_x)
-        screen_y = int(self.y - config.camera_y)
-        return pygame.Rect(screen_x - self.SIZE, screen_y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
+        z = config.zoom_level
+        screen_x = int((self.x - config.camera_x) * z)
+        screen_y = int((self.y - config.camera_y) * z)
+        sz = max(1, int(self.SIZE * z))
+        return pygame.Rect(screen_x - sz, screen_y - sz, 2 * sz, 2 * sz)
 
     def get_rect(self) -> pygame.Rect:
         return pygame.Rect(self.x - self.SIZE, self.y - self.SIZE, 2 * self.SIZE, 2 * self.SIZE)
 
     def draw(self, screen: pygame.Surface) -> None:
-        screen_x = int(self.x - config.camera_x)
-        screen_y = int(self.y - config.camera_y)
-        if -self.SIZE <= screen_x <= config.XLIM + self.SIZE and -self.SIZE <= screen_y <= config.YLIM + self.SIZE:
-            pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), self.SIZE)
+        z = config.zoom_level
+        screen_x = int((self.x - config.camera_x) * z)
+        screen_y = int((self.y - config.camera_y) * z)
+        sz = max(1, int(self.SIZE * z))
+        if -sz <= screen_x <= config.XLIM + sz and -sz <= screen_y <= config.YLIM + sz:
+            pygame.draw.circle(screen, self.COLOR, (screen_x, screen_y), sz)
 
     @property
     def __class__(self):

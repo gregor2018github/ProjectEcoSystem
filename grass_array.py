@@ -84,53 +84,56 @@ class GrassArray:
     
     def draw_visible(self, screen: pygame.Surface, cam_x: int, cam_y: int) -> None:
         """Draw only visible grass chunks efficiently using surface blitting.
-        
+
         Uses NumPy array operations to build a pixel array and then scales it,
         which is much faster than drawing individual rectangles.
-        
+
         Args:
             screen: Pygame surface to draw on.
             cam_x: Camera X offset.
             cam_y: Camera Y offset.
         """
         chunk_size = config.CHUNKSIZE
-        
+        z = config.zoom_level
+
+        # Visible world area in pixels
+        view_w = config.XLIM / z
+        view_h = config.YLIM / z
+
         # Calculate visible chunk range
         start_i = max(0, cam_x // chunk_size)
-        end_i = min(self.cols, (cam_x + config.XLIM) // chunk_size + 1)
+        end_i = min(self.cols, int(cam_x + view_w) // chunk_size + 1)
         start_j = max(0, cam_y // chunk_size)
-        end_j = min(self.rows, (cam_y + config.YLIM) // chunk_size + 1)
-        
+        end_j = min(self.rows, int(cam_y + view_h) // chunk_size + 1)
+
         visible_width = end_i - start_i
         visible_height = end_j - start_j
-        
+
         if visible_width <= 0 or visible_height <= 0:
             return
-        
+
         # Get visible slice of amounts
         visible = self.amounts[start_i:end_i, start_j:end_j]
-        
+
         # Convert amounts to color indices (0-255)
         indices = (visible * 255 / config.GRASS_MAX_AMOUNT).astype(np.uint8)
         np.clip(indices, 0, 255, out=indices)
-        
+
         # Build RGB pixel array using the lookup table (vectorized)
-        # indices shape is (width, height), we need RGB values
         pixel_colors = self.color_lut[indices]  # Shape: (width, height, 3)
-        
+
         # Create a small surface from the pixel array
-        # pygame.surfarray expects (width, height, 3) which matches our array
         small_surface = pygame.surfarray.make_surface(pixel_colors)
-        
-        # Scale up to actual pixel size
-        scaled_width = visible_width * chunk_size
-        scaled_height = visible_height * chunk_size
+
+        # Scale up to actual pixel size (accounting for zoom)
+        scaled_width = int(visible_width * chunk_size * z)
+        scaled_height = int(visible_height * chunk_size * z)
         scaled_surface = pygame.transform.scale(small_surface, (scaled_width, scaled_height))
-        
-        # Calculate screen position offset (sub-chunk alignment)
-        offset_x = start_i * chunk_size - cam_x
-        offset_y = start_j * chunk_size - cam_y
-        
+
+        # Calculate screen position offset (sub-chunk alignment, with zoom)
+        offset_x = int((start_i * chunk_size - cam_x) * z)
+        offset_y = int((start_j * chunk_size - cam_y) * z)
+
         # Blit the scaled surface to the screen
         screen.blit(scaled_surface, (offset_x, offset_y))
     

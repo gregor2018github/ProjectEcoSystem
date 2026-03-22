@@ -16,6 +16,12 @@ camera_x = 0.0
 camera_y = 0.0
 CAMERA_SPEED = 15  # Pixels per frame when moving camera
 
+# Zoom settings
+zoom_level = 1.0       # Current zoom (1.0 = default, >1 = zoomed in, <1 = zoomed out)
+ZOOM_MIN = 0.25        # Maximum zoom out
+ZOOM_MAX = 4.0         # Maximum zoom in
+ZOOM_STEP = 0.1        # Zoom change per scroll tick / key press
+
 NUM_PREDATORS = 5
 NUM_PREYS = 55
 CHUNKSIZE = 10  # 10x10 pixels

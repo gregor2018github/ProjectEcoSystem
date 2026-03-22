@@ -190,8 +190,8 @@ def draw_minimap(screen: pygame.Surface) -> None:
     
     viewport_x = int(config.camera_x * scale_x)
     viewport_y = int(config.camera_y * scale_y)
-    viewport_w = int(config.XLIM * scale_x)
-    viewport_h = int(config.YLIM * scale_y)
+    viewport_w = int((config.XLIM / config.zoom_level) * scale_x)
+    viewport_h = int((config.YLIM / config.zoom_level) * scale_y)
     
     # Draw white rectangle showing current viewport
     viewport_rect = pygame.Rect(viewport_x, viewport_y, viewport_w, viewport_h)
@@ -242,9 +242,12 @@ def draw_simulation(
     rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
     # Format FPS display
     fps_display = f"{config.current_fps:.0f}" if config.current_fps > 0 else "--"
+    # Format zoom display
+    zoom_display = f"{config.zoom_level:.1f}x"
     stats_descr = [
         f"Rounds:",
         f"FPS:",
+        f"Zoom:",
         "",  # Blank line for separation
         f"Prey:",
         f"Predators:",
@@ -261,6 +264,7 @@ def draw_simulation(
     stats = [
         f"{rounds_display}",
         f"{fps_display}",
+        f"{zoom_display}",
         "",  # Blank line for separation
         f"{len(preys)} (Born: {config.prey_born})",
         f"{len(predators)} (Born: {config.predator_born})",
@@ -312,8 +316,9 @@ def draw_simulation(
     
     # Draw locked animal's info window if one is selected and alive
     if locked_animal and locked_animal.alive:
-        # Anchor position for locked window is the animal's screen position (with camera offset)
-        locked_anchor_pos = (int(locked_animal.x - config.camera_x), int(locked_animal.y - config.camera_y))
+        # Anchor position for locked window is the animal's screen position (with camera offset and zoom)
+        locked_anchor_pos = (int((locked_animal.x - config.camera_x) * config.zoom_level),
+                             int((locked_animal.y - config.camera_y) * config.zoom_level))
         hw_locked = HoverWindow(locked_animal, locked_anchor_pos)
         hw_locked.draw(screen)
     
