@@ -69,6 +69,7 @@ def main() -> None:
     current_mouse_pos = (0, 0)
     locked_animal = None  # Stores the view whose info window is locked
     locked_uid = None  # Persistent UID for locked animal
+    hover_uid = None  # Persistent UID for hovered animal
 
     # FPS counter variables (lightweight, updates every 2 seconds)
     fps_frame_count = 0
@@ -88,19 +89,8 @@ def main() -> None:
 
         current_mouse_pos = pygame.mouse.get_pos()
 
-        # Build view lists for UI (hover, click, draw)
-        predator_views = build_predator_views(pred_arrays)
-        prey_views = build_prey_views(prey_arrays)
-        all_views = predator_views + prey_views
-
-        # Resolve locked animal by UID
-        if locked_uid is not None:
-            locked_animal = find_view_by_uid(all_views, locked_uid)
-            if locked_animal is None or not locked_animal.alive:
-                locked_animal = None
-                locked_uid = None
-        else:
-            locked_animal = None
+        # Build temporary view lists for event processing (hover/click detection)
+        event_views = build_predator_views(pred_arrays) + build_prey_views(prey_arrays)
 
         # Handle continuous key presses for camera movement
         keys = pygame.key.get_pressed()
@@ -116,17 +106,43 @@ def main() -> None:
         for event in pygame.event.get():
             running, stopped, pred_arrays, prey_arrays, grass, _, hover_animal, locked_animal = process_event(
                 event, pred_arrays, prey_arrays, grass, screen, running, stopped,
-                hover_animal, locked_animal, all_views
+                hover_animal, locked_animal, event_views
             )
-            # Update locked_uid when locked_animal changes
+            # Track UIDs so we can re-resolve after simulation update
             if locked_animal is not None:
                 locked_uid = locked_animal.uid
             else:
                 locked_uid = None
+            if hover_animal is not None:
+                hover_uid = hover_animal.uid
+            else:
+                hover_uid = None
 
         # Update simulation state if not stopped
         if not stopped:
             update_simulation(pred_arrays, prey_arrays, grass)
+
+        # Rebuild views AFTER simulation update (compact may have reordered indices)
+        predator_views = build_predator_views(pred_arrays)
+        prey_views = build_prey_views(prey_arrays)
+        all_views = predator_views + prey_views
+
+        # Re-resolve hover and locked animals by UID against fresh views
+        if locked_uid is not None:
+            locked_animal = find_view_by_uid(all_views, locked_uid)
+            if locked_animal is None or not locked_animal.alive:
+                locked_animal = None
+                locked_uid = None
+        else:
+            locked_animal = None
+
+        if hover_uid is not None:
+            hover_animal = find_view_by_uid(all_views, hover_uid)
+            if hover_animal is None or not hover_animal.alive:
+                hover_animal = None
+                hover_uid = None
+        else:
+            hover_animal = None
 
         # Always render the simulation state
         draw_simulation(screen, predator_views, prey_views, grass, hover_animal, current_mouse_pos, locked_animal)
