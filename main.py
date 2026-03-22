@@ -70,6 +70,9 @@ def main() -> None:
     locked_animal = None  # Stores the view whose info window is locked
     locked_uid = None  # Persistent UID for locked animal
     hover_uid = None  # Persistent UID for hovered animal
+    mouse_drag_active = False  # True while left mouse button is held
+    mouse_dragged = False  # True if mouse moved enough to count as a drag
+    pending_click_event = None  # Deferred MOUSEBUTTONDOWN until we know it's not a drag
 
     # FPS counter variables (lightweight, updates every 2 seconds)
     fps_frame_count = 0
@@ -104,10 +107,40 @@ def main() -> None:
             config.camera_x = min(config.WORLD_WIDTH - config.XLIM, config.camera_x + config.CAMERA_SPEED)
 
         for event in pygame.event.get():
+            # Mouse drag panning: defer left-click until we know it's not a drag
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_drag_active = True
+                mouse_dragged = False
+                pending_click_event = event
+                continue  # Don't process yet — wait for mouseup or drag
+            elif event.type == pygame.MOUSEMOTION and mouse_drag_active:
+                rel_x, rel_y = event.rel
+                if not mouse_dragged and (abs(rel_x) > 2 or abs(rel_y) > 2):
+                    mouse_dragged = True
+                if mouse_dragged:
+                    config.camera_x = max(0, min(config.WORLD_WIDTH - config.XLIM, config.camera_x - rel_x))
+                    config.camera_y = max(0, min(config.WORLD_HEIGHT - config.YLIM, config.camera_y - rel_y))
+                    continue  # Skip process_event so hover doesn't flicker while dragging
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                if not mouse_dragged and pending_click_event is not None:
+                    # It was a real click, not a drag — process the deferred mousedown now
+                    running, stopped, pred_arrays, prey_arrays, grass, _, hover_animal, locked_animal = process_event(
+                        pending_click_event, pred_arrays, prey_arrays, grass, screen, running, stopped,
+                        hover_animal, locked_animal, event_views
+                    )
+                    locked_uid = locked_animal.uid if locked_animal is not None else None
+                    hover_uid = hover_animal.uid if hover_animal is not None else None
+                # Reset drag state
+                mouse_drag_active = False
+                mouse_dragged = False
+                pending_click_event = None
+                continue
+
             running, stopped, pred_arrays, prey_arrays, grass, _, hover_animal, locked_animal = process_event(
                 event, pred_arrays, prey_arrays, grass, screen, running, stopped,
                 hover_animal, locked_animal, event_views
             )
+
             # Track UIDs so we can re-resolve after simulation update
             if locked_animal is not None:
                 locked_uid = locked_animal.uid
