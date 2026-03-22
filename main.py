@@ -80,6 +80,9 @@ def main() -> None:
     config.WORLD_WIDTH = config.XLIM * config.WORLD_SIZE_MULTIPLIER
     config.WORLD_HEIGHT = config.YLIM * config.WORLD_SIZE_MULTIPLIER
 
+    # Set minimum zoom so the entire world fits on screen
+    config.ZOOM_MIN = min(config.XLIM / config.WORLD_WIDTH, config.YLIM / config.WORLD_HEIGHT)
+
     # Initialize camera position (start at top-left)
     config.camera_x = 0.0
     config.camera_y = 0.0
