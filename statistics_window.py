@@ -7,7 +7,7 @@ import pygame
 import config
 from ui import draw_button, register_button_click
 from simulation import update_simulation
-from animals import Predator, Prey
+from animal_arrays import PredatorArrays, PreyArrays
 from grass_array import GrassArray
 
 class Dropdown:
@@ -116,10 +116,10 @@ class StatisticsWindow:
         close_rect: Rectangle defining the close button area.
     """
     
-    def __init__(self, predators: list[Predator], preys: list[Prey], grass: GrassArray, simulation_running: bool) -> None:
+    def __init__(self, predators, preys, grass: GrassArray, simulation_running: bool) -> None:
         """Initialize the statistics window with charts and UI elements."""
-        self.predators = predators
-        self.preys = preys
+        self.pred_arrays = predators   # PredatorArrays SoA
+        self.prey_arrays = preys       # PreyArrays SoA
         self.grass = grass
         self.simulation_running = simulation_running
 
@@ -600,19 +600,26 @@ class StatisticsWindow:
 
             ratio = prey_count / pred_count if pred_count > 0 else float('inf')
 
-            highest_prey_gen = max((p.generation for p in self.preys), default=0)
-            lowest_prey_gen = min((p.generation for p in self.preys), default=0)
+            _pa = self.pred_arrays
+            _ya = self.prey_arrays
 
-            highest_pred_gen = max((p.generation for p in self.predators), default=0)
-            lowest_pred_gen = min((p.generation for p in self.predators), default=0)
+            if _ya.count > 0:
+                highest_prey_gen = int(_ya.generation[:_ya.count].max())
+                lowest_prey_gen = int(_ya.generation[:_ya.count].min())
+                avg_prey_age = float(_ya.age[:_ya.count].mean())
+                avg_prey_energy = float(_ya.food[:_ya.count].mean())
+            else:
+                highest_prey_gen = lowest_prey_gen = 0
+                avg_prey_age = avg_prey_energy = 0
 
-            # Average age
-            avg_prey_age = sum(p.age for p in self.preys) / len(self.preys) if self.preys else 0
-            avg_pred_age = sum(p.age for p in self.predators) / len(self.predators) if self.predators else 0
-
-            # Average energy
-            avg_prey_energy = sum(p.food for p in self.preys) / len(self.preys) if self.preys else 0
-            avg_pred_energy = sum(p.food for p in self.predators) / len(self.predators) if self.predators else 0
+            if _pa.count > 0:
+                highest_pred_gen = int(_pa.generation[:_pa.count].max())
+                lowest_pred_gen = int(_pa.generation[:_pa.count].min())
+                avg_pred_age = float(_pa.age[:_pa.count].mean())
+                avg_pred_energy = float(_pa.food[:_pa.count].mean())
+            else:
+                highest_pred_gen = lowest_pred_gen = 0
+                avg_pred_age = avg_pred_energy = 0
 
             # Last 100 rounds stats (computed from cumulative history)
             def last_n_delta(key, n=100):
@@ -684,12 +691,12 @@ class StatisticsWindow:
                 
                 start_y += line_height
             
-            # Helper function to get trait stats (min, max, avg)
-            def get_trait_stats(animals, trait_name):
-                if not animals:
+            # Helper function to get trait stats (min, max, avg) from SoA arrays
+            def get_trait_stats(arrays, trait_name):
+                if arrays.count == 0:
                     return (0, 0, 0)
-                values = [getattr(a, trait_name) for a in animals]
-                return (min(values), max(values), sum(values) / len(values))
+                arr = getattr(arrays, trait_name)[:arrays.count]
+                return (float(arr.min()), float(arr.max()), float(arr.mean()))
             
             # Format trait value based on magnitude
             def fmt_val(v):
@@ -751,7 +758,7 @@ class StatisticsWindow:
             ]
             
             for display_name, attr_name, base_value in predator_traits:
-                min_v, max_v, avg_v = get_trait_stats(self.predators, attr_name)
+                min_v, max_v, avg_v = get_trait_stats(self.pred_arrays, attr_name)
                 
                 # Calculate percentage difference from base (using average)
                 if base_value != 0:
@@ -797,7 +804,7 @@ class StatisticsWindow:
             ]
             
             for display_name, attr_name, base_value in prey_traits:
-                min_v, max_v, avg_v = get_trait_stats(self.preys, attr_name)
+                min_v, max_v, avg_v = get_trait_stats(self.prey_arrays, attr_name)
                 
                 # Calculate percentage difference from base (using average)
                 if base_value != 0:
@@ -870,7 +877,7 @@ class StatisticsWindow:
                             self.phase_mode = i
             
             if self.simulation_running:
-                update_simulation(self.predators, self.preys, self.grass)
+                update_simulation(self.pred_arrays, self.prey_arrays, self.grass)
             
             mouse_pos = pygame.mouse.get_pos()
 

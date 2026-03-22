@@ -5,8 +5,7 @@
 from __future__ import annotations
 import pygame
 import config
-from hover_window import HoverWindow # Import HoverWindow
-from animals import Animal, Predator, Prey
+from hover_window import HoverWindow
 from grass_array import GrassArray
 
 ################################################
@@ -207,12 +206,12 @@ def draw_minimap(screen: pygame.Surface) -> None:
 
 def draw_simulation(
     screen: pygame.Surface,
-    predators: list[Predator],
-    preys: list[Prey],
+    predators: list,
+    preys: list,
     grass: GrassArray,
-    hover_animal: Animal | None = None,
+    hover_animal=None,
     current_mouse_pos: tuple[int, int] | None = None,
-    locked_animal: Animal | None = None
+    locked_animal=None,
 ) -> None:
     """Draw the complete simulation frame including all visual elements.
     

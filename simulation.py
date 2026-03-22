@@ -5,135 +5,84 @@
 from __future__ import annotations
 import random
 import config
-from animals import Predator, Prey
+from animal_arrays import PredatorArrays, PreyArrays
 from grass_array import GrassArray
-from spatial_hash import SpatialHash
-
-# Pre-allocate spatial hash grids (reused each frame to avoid allocations)
-_predator_hash: SpatialHash[Predator] = SpatialHash(max(config.PREDATOR_SMELL_DISTANCE, config.PREDATOR_PREDATOR_AVOID_DISTANCE))
-_prey_hash: SpatialHash[Prey] = SpatialHash(max(config.PREDATOR_SMELL_DISTANCE, config.PREY_MATING_SEARCH_DISTANCE))
+from vectorized_update import (
+    update_predators, update_prey,
+    process_deaths, process_reproduction,
+)
 
 ################################################
 # Simulation Setup and Update Functions
 ################################################
 
-def setup_simulation() -> tuple[list[Predator], list[Prey], GrassArray]:
+def setup_simulation() -> tuple[PredatorArrays, PreyArrays, GrassArray]:
     """Initialize the simulation with predators, prey, and grass.
-    
-    Creates the initial population of predators and prey at random positions
-    within the simulation boundaries, and initializes the grass grid.
-    
+
     Returns:
         A tuple containing:
-            - List of Predator objects
-            - List of Prey objects
+            - PredatorArrays (SoA)
+            - PreyArrays (SoA)
             - GrassArray for efficient grass management
     """
-    predators = [Predator(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREDATORS)]
-    preys = [Prey(random.uniform(0, config.WORLD_WIDTH), random.uniform(0, config.WORLD_HEIGHT)) for _ in range(config.NUM_PREYS)]
-    
-    # Initialize grass array (much faster than dict of objects)
+    pred = PredatorArrays(max(256, config.NUM_PREDATORS * 2))
+    prey = PreyArrays(max(1024, config.NUM_PREYS * 2))
+
+    for _ in range(config.NUM_PREDATORS):
+        pred.add_default(
+            random.uniform(0, config.WORLD_WIDTH),
+            random.uniform(0, config.WORLD_HEIGHT),
+        )
+    for _ in range(config.NUM_PREYS):
+        prey.add_default(
+            random.uniform(0, config.WORLD_WIDTH),
+            random.uniform(0, config.WORLD_HEIGHT),
+        )
+
+    # Initialize grass array
     cols = int(config.WORLD_WIDTH // config.CHUNKSIZE)
     rows = int(config.WORLD_HEIGHT // config.CHUNKSIZE)
     grass = GrassArray(cols, rows)
-    
-    # Initialize total grass tracking
+
     config.total_grass = grass.get_total()
-    
-    return predators, preys, grass
+
+    return pred, prey, grass
+
 
 def update_simulation(
-    predators: list[Predator],
-    preys: list[Prey],
-    grass: GrassArray
+    pred: PredatorArrays,
+    prey: PreyArrays,
+    grass: GrassArray,
 ) -> None:
-    """Advance the simulation by one tick.
-    
-    Updates all animals and grass, removes dead animals, handles reproduction,
-    and records statistics history.
-    
+    """Advance the simulation by one tick using vectorized operations.
+
     Args:
-        predators: List of predator objects to update (modified in place).
-        preys: List of prey objects to update (modified in place).
+        pred: PredatorArrays SoA (modified in place).
+        prey: PreyArrays SoA (modified in place).
         grass: GrassArray for grass management.
     """
-    # Build spatial hash grids for fast proximity queries
-    _predator_hash.build_from_list(predators)
-    _prey_hash.build_from_list(preys)
-    
-    # Update animals - pass spatial hash for fast lookups
-    for p in predators:
-        p.update(_predator_hash, _prey_hash, grass)
-    for p in preys:
-        p.update(_predator_hash, _prey_hash, grass)
-        
-    # Count deaths before removal
-    preys_before = len(preys)
-    predators_before = len(predators)
-    
-    # Remove dead animals (using the original separate lists)
-    predators[:] = [p for p in predators if p.alive]
-    preys[:] = [p for p in preys if p.alive]
-    
-    config.predator_deceased += (predators_before - len(predators))
-    config.prey_deceased += (preys_before - len(preys))
-    
-    # Reproduction: Preys reproduce with trait inheritance
-    new_preys = []
-    for p in preys:
-        if p.reproduced:
-            number_preys_born = random.randint(1, 4)  # Each reproduction event spawns 1 to 4 new preys
-            for _ in range(number_preys_born):
-                if p.mating_partner is not None:
-                    # Use evolutionary inheritance from both parents
-                    child = p.inherit_traits(p.mating_partner)
-                    # Add slight position offset to avoid overlap
-                    child.x += random.uniform(-5, 5)
-                    child.y += random.uniform(-5, 5)
-                    new_preys.append(child)
-                else:
-                    # Fallback for simple reproduction (no mating partner)
-                    new_preys.append(Prey(p.x, p.y, generation=p.generation + 1))
-            config.prey_born += number_preys_born
-            p.offspring_created += number_preys_born
-            p.mating_partner = None  # Clear partner reference after reproduction
-    preys.extend(new_preys)
-    
-    # Reproduction: Predators reproduce via mating with trait inheritance
-    new_predators = []
-    for p in predators:
-        if p.reproduced:
-            number_predators_born = random.randint(1, 4)  # Each reproduction event spawns 1 to 4 new predators
-            for _ in range(number_predators_born):
-                rand_x_dist = random.uniform(10, 15)*random.choice([-1, 1])
-                rand_y_dist = random.uniform(10, 15)*random.choice([-1, 1])
-                if p.mating_partner is not None:
-                    # Use evolutionary inheritance from both parents
-                    child = p.inherit_traits(p.mating_partner)
-                    child.x += rand_x_dist
-                    child.y += rand_y_dist
-                    new_predators.append(child)
-                else:
-                    # Fallback (shouldn't happen for predators since they require mating)
-                    new_predators.append(Predator(p.x + rand_x_dist, p.y + rand_y_dist, generation=p.generation + 1))
-            config.predator_born += number_predators_born
-            p.reproduced = False  # Reset flag after reproduction
-            p.offspring_created += number_predators_born
-            p.mating_partner = None  # Clear partner reference after reproduction
-    predators.extend(new_predators)
-    
-    # Increment simulation round
+    # Vectorized animal updates
+    update_predators(pred, prey, grass)
+    update_prey(pred, prey, grass)
+
+    # Count and remove dead animals
+    pred_deaths, prey_deaths = process_deaths(pred, prey)
+    config.predator_deceased += pred_deaths
+    config.prey_deceased += prey_deaths
+
+    # Reproduction
+    process_reproduction(pred, prey)
+
+    # Increment round
     config.rounds_passed += 1
 
-    # Update all grass in one vectorized operation (MUCH faster than individual updates)
+    # Vectorized grass update
     grass.update()
-
-    # Recompute total grass from the array each tick to avoid floating-point drift
     config.total_grass = grass.get_total()
 
-    # Update stats history (using the updated separate lists)
-    config.stats_history["Prey Count"].append(len(preys))
-    config.stats_history["Predator Count"].append(len(predators))
+    # Update stats history
+    config.stats_history["Prey Count"].append(prey.count)
+    config.stats_history["Predator Count"].append(pred.count)
     config.stats_history["Grass Total"].append(config.total_grass)
     config.stats_history["Prey deceased"].append(config.prey_deceased)
     config.stats_history["Predator deceased"].append(config.predator_deceased)
