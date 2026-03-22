@@ -620,6 +620,8 @@ def process_reproduction(pred: PredatorArrays, prey: PreyArrays) -> None:
 
             config.prey_born += num_born
             prey.offspring_created[ri] += num_born
+            if partner_idx >= 0 and partner_idx < prey.count:
+                prey.offspring_created[partner_idx] += num_born
             prey.mating_partner_idx[ri] = -1
 
     # --- Predator reproduction ---
@@ -667,6 +669,8 @@ def process_reproduction(pred: PredatorArrays, prey: PreyArrays) -> None:
             config.predator_born += num_born
             pred.reproduced[ri] = 0
             pred.offspring_created[ri] += num_born
+            if partner_idx >= 0 and partner_idx < pred.count:
+                pred.offspring_created[partner_idx] += num_born
             pred.mating_partner_idx[ri] = -1
 
 
