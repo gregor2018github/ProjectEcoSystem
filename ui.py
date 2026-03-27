@@ -31,6 +31,16 @@ _last_minimap_tick: int = 0    # Last tick for dt calculation
 _font_stats: pygame.font.Font | None = None
 _font_button: pygame.font.Font | None = None
 _font_hud: pygame.font.Font | None = None
+_font_btn_label: pygame.font.Font | None = None
+
+# Button layout constants (single source of truth for ui + event_handler)
+_BTN_W          = 90   # button width
+_BTN_H          = 30   # button height
+_BTN_INNER_GAP  = 5    # gap between buttons within a group
+_BTN_SECTION_GAP = 12  # gap between bottom of one group and label of next
+_BTN_LABEL_H    = 13   # height allocated for section label text
+_BTN_LABEL_PAD  = 4    # gap between label and first button of group
+_BTN_PANEL_PAD  = 8    # panel internal padding (top/bottom/sides)
 
 def get_stats_font() -> pygame.font.Font:
     """Get the cached stats font, initializing if needed."""
@@ -42,7 +52,7 @@ def get_stats_font() -> pygame.font.Font:
 def get_hud_font() -> pygame.font.Font:
     global _font_hud
     if _font_hud is None:
-        _font_hud = pygame.font.Font(None, 16)
+        _font_hud = pygame.font.Font(None, 20)
     return _font_hud
 
 def get_button_font() -> pygame.font.Font:
@@ -51,6 +61,70 @@ def get_button_font() -> pygame.font.Font:
     if _font_button is None:
         _font_button = pygame.font.Font(None, 24)
     return _font_button
+
+def get_btn_label_font() -> pygame.font.Font:
+    global _font_btn_label
+    if _font_btn_label is None:
+        _font_btn_label = pygame.font.Font(None, 14)
+    return _font_btn_label
+
+
+def get_button_rects() -> dict[str, pygame.Rect]:
+    """Return all button rects — single source of truth for ui and event_handler."""
+    bx = config.XLIM - config.BUTTON_X_OFFSET
+    y  = config.BUTTON_Y_START + _BTN_PANEL_PAD
+
+    rects: dict[str, pygame.Rect] = {}
+
+    def add_group(names: list[str]) -> None:
+        nonlocal y
+        y += _BTN_LABEL_H + _BTN_LABEL_PAD   # space for section label
+        for i, name in enumerate(names):
+            rects[name] = pygame.Rect(bx, y, _BTN_W, _BTN_H)
+            y += _BTN_H + (_BTN_INNER_GAP if i < len(names) - 1 else 0)
+
+    add_group(['exit', 'pause', 'settings'])
+    y += _BTN_SECTION_GAP
+    add_group(['add_pred', 'rem_pred', 'add_prey', 'rem_prey'])
+    y += _BTN_SECTION_GAP
+    add_group(['statistics', 'kill_pop'])
+
+    return rects
+
+
+def _draw_button_panel(screen: pygame.Surface, rects: dict[str, pygame.Rect]) -> None:
+    font = get_btn_label_font()
+
+    bx       = config.XLIM - config.BUTTON_X_OFFSET
+    panel_x  = bx - _BTN_PANEL_PAD
+    panel_y  = config.BUTTON_Y_START
+    panel_w  = _BTN_W + 2 * _BTN_PANEL_PAD
+    panel_h  = max(r.bottom for r in rects.values()) + _BTN_PANEL_PAD - panel_y
+
+    bg = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+    bg.fill((6, 18, 6, 160))
+    screen.blit(bg, (panel_x, panel_y))
+    pygame.draw.rect(screen, (50, 90, 50), (panel_x, panel_y, panel_w, panel_h), 1)
+
+    C_LBL = (100, 140, 100)
+    C_DIV = (45, 80, 45)
+
+    sections = [
+        ('SIM',        'exit'),
+        ('POPULATION', 'add_pred'),
+        ('TOOLS',      'statistics'),
+    ]
+    for title, first_key in sections:
+        first_rect = rects[first_key]
+        lbl_y = first_rect.top - _BTN_LABEL_H - _BTN_LABEL_PAD
+
+        if title != 'SIM':
+            div_y = lbl_y - _BTN_SECTION_GAP // 2
+            pygame.draw.line(screen, C_DIV,
+                             (panel_x + 5, div_y), (panel_x + panel_w - 5, div_y))
+
+        s = font.render(title, True, C_LBL)
+        screen.blit(s, (panel_x + (panel_w - s.get_width()) // 2, lbl_y))
 
 ################################################
 # Button Drawing Functions
@@ -222,10 +296,10 @@ def draw_minimap(screen: pygame.Surface) -> None:
 def _draw_stats_panel(screen: pygame.Surface, predators: list, preys: list) -> None:
     font = get_hud_font()
 
-    PAD    = 8
-    LINE_H = 17
-    DIV_H  = 7   # total vertical space for a divider row
-    PANEL_W = 175
+    PAD    = 9
+    LINE_H = 21
+    DIV_H  = 8   # total vertical space for a divider row
+    PANEL_W = 210
 
     # Colors
     C_LBL = (150, 190, 150)   # muted green labels
@@ -246,7 +320,7 @@ def _draw_stats_panel(screen: pygame.Surface, predators: list, preys: list) -> N
     pygame.draw.rect(screen, C_BDR, (PX, PY, PANEL_W, PANEL_H), 1)
 
     LX  = PX + PAD          # label left x
-    V1R = PX + 118           # col-1 value right edge  (count / prey deaths)
+    V1R = PX + 142           # col-1 value right edge  (count / prey deaths)
     V2R = PX + PANEL_W - PAD # col-2 value right edge  (born / pred deaths / zoom)
 
     def blit_l(text: str, color: tuple, x: int, y: int) -> None:
@@ -337,30 +411,20 @@ def draw_simulation(
     _draw_stats_panel(screen, predators, preys)
 
     # Buttons on the right side of the screen
-    button_x = config.XLIM - config.BUTTON_X_OFFSET
-    # Get current mouse position for button hover effects, as current_mouse_pos might be from a past event if mouse isn't moving
-    button_hover_mouse_pos = pygame.mouse.get_pos() 
-
-    exit_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    pause_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    settings_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 2 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    add_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 3 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    rem_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    rem_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 6 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 7 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-    kill_pop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 8 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    button_hover_mouse_pos = pygame.mouse.get_pos()
+    btn = get_button_rects()
+    _draw_button_panel(screen, btn)
     font_button = get_button_font()
 
-    draw_button(screen, exit_button_rect, "Exit", font_button, button_hover_mouse_pos)
-    draw_button(screen, pause_button_rect, "Stop/Play", font_button, button_hover_mouse_pos)
-    draw_button(screen, settings_button_rect, "Settings", font_button, button_hover_mouse_pos)
-    draw_button(screen, add_pred_button_rect, "Add Pred", font_button, button_hover_mouse_pos)
-    draw_button(screen, rem_pred_button_rect, "Rem Pred", font_button, button_hover_mouse_pos)
-    draw_button(screen, add_prey_button_rect, "Add Prey", font_button, button_hover_mouse_pos)
-    draw_button(screen, rem_prey_button_rect, "Rem Prey", font_button, button_hover_mouse_pos)
-    draw_button(screen, stats_button_rect, "Statistics", font_button, button_hover_mouse_pos)
-    draw_button(screen, kill_pop_button_rect, "Kill Pop", font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['exit'],       "Exit",       font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['pause'],      "Stop/Play",  font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['settings'],   "Settings",   font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['add_pred'],   "Add Pred",   font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['rem_pred'],   "Rem Pred",   font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['add_prey'],   "Add Prey",   font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['rem_prey'],   "Rem Prey",   font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['statistics'], "Statistics", font_button, button_hover_mouse_pos)
+    draw_button(screen, btn['kill_pop'],   "Kill Pop",   font_button, button_hover_mouse_pos)
     
     # Draw locked animal's info window if one is selected and alive
     if locked_animal and locked_animal.alive:
