@@ -13,6 +13,7 @@ from simulation import setup_simulation
 from ui import register_button_click
 from settings_window import SettingsWindow
 from statistics_window import StatisticsWindow
+from kill_pop_window import KillPopWindow
 
 ################################################
 # Sound management
@@ -101,7 +102,8 @@ def process_event(
         rem_pred_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 4 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
         add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
         rem_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 6 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
-        stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 7 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        stats_button_rect    = pygame.Rect(button_x, config.BUTTON_Y_START + 7 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+        kill_pop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 8 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
 
         if exit_button_rect.collidepoint(mouse_pos):
             register_button_click(exit_button_rect)
@@ -220,6 +222,12 @@ def process_event(
             stats_win = StatisticsWindow(pred_arrays, prey_arrays, grass, not stopped)
             stopped = not stats_win.run()
             pygame.display.set_caption("Simulation")
+            event_handled_by_button = True
+        elif kill_pop_button_rect.collidepoint(mouse_pos):
+            register_button_click(kill_pop_button_rect)
+            play_click_sound()
+            kill_win = KillPopWindow(screen, pred_arrays, prey_arrays, grass)
+            kill_win.run()
             event_handled_by_button = True
 
         # Handle locking/unlocking based on non-button clicks

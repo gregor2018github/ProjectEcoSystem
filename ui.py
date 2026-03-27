@@ -303,6 +303,7 @@ def draw_simulation(
     add_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 5 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     rem_prey_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 6 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     stats_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 7 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+    kill_pop_button_rect = pygame.Rect(button_x, config.BUTTON_Y_START + 8 * config.BUTTON_Y_GAP, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
     font_button = get_button_font()
 
     draw_button(screen, exit_button_rect, "Exit", font_button, button_hover_mouse_pos)
@@ -313,6 +314,7 @@ def draw_simulation(
     draw_button(screen, add_prey_button_rect, "Add Prey", font_button, button_hover_mouse_pos)
     draw_button(screen, rem_prey_button_rect, "Rem Prey", font_button, button_hover_mouse_pos)
     draw_button(screen, stats_button_rect, "Statistics", font_button, button_hover_mouse_pos)
+    draw_button(screen, kill_pop_button_rect, "Kill Pop", font_button, button_hover_mouse_pos)
     
     # Draw locked animal's info window if one is selected and alive
     if locked_animal and locked_animal.alive:
