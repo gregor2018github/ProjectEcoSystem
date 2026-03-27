@@ -478,8 +478,8 @@ class StatisticsWindow:
                 if box_y + box_h > rect.bottom: box_y = my - box_h - 15
                 
                 # Draw box
-                pygame.draw.rect(surface, (40, 40, 40), (box_x, box_y, box_w, box_h))
-                pygame.draw.rect(surface, (100, 100, 100), (box_x, box_y, box_w, box_h), 1)
+                pygame.draw.rect(surface, (22, 35, 27), (box_x, box_y, box_w, box_h))
+                pygame.draw.rect(surface, (80, 160, 100), (box_x, box_y, box_w, box_h), 1)
                 
                 # Draw text
                 curr_y = box_y + 5
@@ -683,8 +683,8 @@ class StatisticsWindow:
             col2_x = start_x + table_width
             
             for label, value in rows:
-                label_surf = self.font.render(label, True, (200, 200, 200))
-                value_surf = self.font.render(value, True, (255, 255, 255))
+                label_surf = self.font.render(label, True, (160, 200, 165))
+                value_surf = self.font.render(value, True, (200, 230, 200))
                 
                 surface.blit(label_surf, (col1_x, start_y))
                 surface.blit(value_surf, (col2_x - value_surf.get_width(), start_y))
@@ -977,17 +977,17 @@ class StatisticsWindow:
                 draw_statistics_table(self.stats_table_surf, temp_rect)
                 self.last_table_update = config.rounds_passed
 
-            self.stat_screen.fill((30, 30, 30))
-            
+            self.stat_screen.fill((20, 28, 23))
+
             # Blit cached surfaces
             self.stat_screen.blit(self.pop_chart_surf, self.pop_chart_rect)
             self.stat_screen.blit(self.phase_diagram_surf, self.event_chart_rect)
             self.stat_screen.blit(self.stats_table_surf, self.stats_table_rect)
-            
+
             # Draw borders
-            pygame.draw.rect(self.stat_screen, (200,200,200), self.pop_chart_rect, 1)
-            pygame.draw.rect(self.stat_screen, (200,200,200), self.event_chart_rect, 1)
-            pygame.draw.rect(self.stat_screen, (200,200,200), self.stats_table_rect, 1)
+            pygame.draw.rect(self.stat_screen, (80, 160, 100), self.pop_chart_rect, 2)
+            pygame.draw.rect(self.stat_screen, (80, 160, 100), self.event_chart_rect, 2)
+            pygame.draw.rect(self.stat_screen, (80, 160, 100), self.stats_table_rect, 2)
             
             pop_title = "Relative Population Graph" if self.pop_mode == 0 else "Absolute Population Graph"
             header_parts = [

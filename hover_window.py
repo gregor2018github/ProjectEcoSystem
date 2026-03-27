@@ -43,8 +43,8 @@ class HoverWindow:
         self.font = pygame.font.Font(None, 20) # Small font for the hover info
         self.padding = 5
         self.line_height = 20
-        self.window_color = (40, 40, 40, 210) # Semi-transparent dark background
-        self.text_color = (230, 230, 230)     # Light grey text
+        self.window_color = (22, 35, 27, 225)  # Semi-transparent dark green background
+        self.text_color = (200, 230, 200)      # Light green text
 
         # Determine animal type via duck typing
         is_predator = isinstance(animal, PredatorView) or hasattr(animal, 'prey_eaten')
@@ -120,7 +120,10 @@ class HoverWindow:
         """
         # Create a surface with per-pixel alpha for transparency
         temp_surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        temp_surface.fill(self.window_color) # Apply background color with alpha
+        temp_surface.fill(self.window_color)
+        # Draw border
+        pygame.draw.rect(temp_surface, (80, 160, 100, 200),
+                         pygame.Rect(0, 0, self.rect.width, self.rect.height), 1)
 
         # Draw text lines onto the temporary surface
         current_y = self.padding

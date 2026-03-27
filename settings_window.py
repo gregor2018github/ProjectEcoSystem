@@ -334,11 +334,15 @@ class SettingsWindow:
             # Update cursor timer for blinking effect
             self.cursor_timer += clock.get_time()
             
-            pygame.draw.rect(self.screen, (240,240,240), self.modal_rect)
-            header = self.font.render("Simulation Settings", True, (0,0,0))
+            pygame.draw.rect(self.screen, (30, 40, 35), self.modal_rect, border_radius=12)
+            pygame.draw.rect(self.screen, (80, 160, 100), self.modal_rect, 2, border_radius=12)
+            header = self.font.render("Simulation Settings", True, (200, 230, 200))
             self.screen.blit(header, (self.modal_rect.centerx - header.get_width()//2, self.modal_rect.top + 20))
-            
-            pygame.draw.rect(self.screen, (200, 200, 200), params_area)
+            pygame.draw.line(self.screen, (60, 100, 70),
+                             (self.modal_rect.left + 15, self.modal_rect.top + 48),
+                             (self.modal_rect.right - 15, self.modal_rect.top + 48), 1)
+
+            pygame.draw.rect(self.screen, (20, 35, 25), params_area, border_radius=4)
             param_font = pygame.font.Font(None, 24)
             keys = list(self.settings.keys())
             for i, key in enumerate(keys):
@@ -348,18 +352,21 @@ class SettingsWindow:
                     # Skip rendering for section separators (empty lines)
                     if key == "":
                         continue
-                        
+
                     text_val = str(self.settings[key])
                     rect = pygame.Rect(params_area.left, y - 5, params_area.width, 30)
                     if key == self.active_key:
                         if self.error_fields.get(key, False):
-                            pygame.draw.rect(self.screen, (255, 0, 0), rect)
+                            pygame.draw.rect(self.screen, (70, 20, 20), rect, border_radius=3)
+                            pygame.draw.rect(self.screen, (220, 80, 80), rect, 1, border_radius=3)
                         else:
-                            pygame.draw.rect(self.screen, (180, 180, 250), rect)
+                            pygame.draw.rect(self.screen, (25, 55, 38), rect, border_radius=3)
+                            pygame.draw.rect(self.screen, (100, 200, 130), rect, 1, border_radius=3)
                     ref_val = self.reference_values.get(key, config.default_settings.get(key, ''))
                     ref_lbl = "start" if (key in config.SETTINGS_TO_PRED_TRAIT or key in config.SETTINGS_TO_PREY_TRAIT) else "std"
                     label = f"{key} ({ref_lbl}: {ref_val}): {text_val}"
-                    text_surface = param_font.render(label, True, (0,0,0))
+                    text_color = (220, 80, 80) if self.error_fields.get(key, False) else (180, 210, 180)
+                    text_surface = param_font.render(label, True, text_color)
                     # Center text vertically within the rect
                     text_y = rect.top + (rect.height - text_surface.get_height()) // 2
                     self.screen.blit(text_surface, (rect.left + 10, text_y))
@@ -370,15 +377,15 @@ class SettingsWindow:
                         caret_x = rect.left + 10 + param_font.size(text_before_cursor)[0]
                         caret_y = text_y
                         caret_height = param_font.get_height()
-                        pygame.draw.line(self.screen, (0,0,0), (caret_x, caret_y), (caret_x, caret_y + caret_height), 2)
-            
+                        pygame.draw.line(self.screen, (150, 220, 160), (caret_x, caret_y), (caret_x, caret_y + caret_height), 2)
+
             # Draw scrollbar
             if total_content > params_area.height:
                 scrollbar_width = 10
                 scrollbar_x = params_area.right - scrollbar_width
                 scrollbar_rect = pygame.Rect(scrollbar_x, params_area.top, scrollbar_width, params_area.height)
-                pygame.draw.rect(self.screen, (150, 150, 150), scrollbar_rect)
-                
+                pygame.draw.rect(self.screen, (40, 60, 45), scrollbar_rect, border_radius=5)
+
                 # Calculate thumb position and size
                 content_ratio = params_area.height / (total_content + padding_bottom)
                 thumb_height = max(20, int(params_area.height * content_ratio))
@@ -388,9 +395,9 @@ class SettingsWindow:
                     thumb_y = params_area.top + int((max_scroll - self.scroll_offset) / scroll_range * (params_area.height - thumb_height))
                 else:
                     thumb_y = params_area.top
-                
+
                 thumb_rect = pygame.Rect(scrollbar_x, thumb_y, scrollbar_width, thumb_height)
-                pygame.draw.rect(self.screen, (100, 100, 100), thumb_rect)
+                pygame.draw.rect(self.screen, (80, 150, 95), thumb_rect, border_radius=5)
             
             btn_font = pygame.font.Font(None, 24)
             draw_button(self.screen, self.btn_rect_standard, "Restart", btn_font, mouse_pos_settings)
