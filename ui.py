@@ -30,6 +30,7 @@ _last_minimap_tick: int = 0    # Last tick for dt calculation
 
 _font_stats: pygame.font.Font | None = None
 _font_button: pygame.font.Font | None = None
+_font_hud: pygame.font.Font | None = None
 
 def get_stats_font() -> pygame.font.Font:
     """Get the cached stats font, initializing if needed."""
@@ -37,6 +38,12 @@ def get_stats_font() -> pygame.font.Font:
     if _font_stats is None:
         _font_stats = pygame.font.Font(None, config.STATS_FONT_SIZE)
     return _font_stats
+
+def get_hud_font() -> pygame.font.Font:
+    global _font_hud
+    if _font_hud is None:
+        _font_hud = pygame.font.Font(None, 16)
+    return _font_hud
 
 def get_button_font() -> pygame.font.Font:
     """Get the cached button font, initializing if needed."""
@@ -200,6 +207,85 @@ def draw_minimap(screen: pygame.Surface) -> None:
     # Blit the minimap surface to the screen
     screen.blit(minimap_surface, (minimap_x, minimap_y))
 
+def _draw_stats_panel(screen: pygame.Surface, predators: list, preys: list) -> None:
+    font = get_hud_font()
+
+    PAD    = 8
+    LINE_H = 17
+    DIV_H  = 7   # total vertical space for a divider row
+    PANEL_W = 175
+
+    # Colors
+    C_LBL = (150, 190, 150)   # muted green labels
+    C_VAL = (225, 248, 225)   # bright values
+    C_DIM = (100, 140, 100)   # dim headers / secondary info
+    C_DIV = (45,  80,  45)    # divider line
+    C_BDR = (50,  90,  50)    # panel border
+
+    PX, PY = 8, 8  # panel top-left on screen
+
+    # 3 sim rows + div + 3 pop rows + div + 4 death rows, plus padding
+    PANEL_H = PAD + 3 * LINE_H + DIV_H + 3 * LINE_H + DIV_H + 4 * LINE_H + PAD
+
+    # Semi-transparent panel background
+    bg = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
+    bg.fill((6, 18, 6, 160))
+    screen.blit(bg, (PX, PY))
+    pygame.draw.rect(screen, C_BDR, (PX, PY, PANEL_W, PANEL_H), 1)
+
+    LX  = PX + PAD          # label left x
+    V1R = PX + 118           # col-1 value right edge  (count / prey deaths)
+    V2R = PX + PANEL_W - PAD # col-2 value right edge  (born / pred deaths / zoom)
+
+    def blit_l(text: str, color: tuple, x: int, y: int) -> None:
+        screen.blit(font.render(text, True, color), (x, y))
+
+    def blit_r(text: str, color: tuple, right_x: int, y: int) -> None:
+        s = font.render(text, True, color)
+        screen.blit(s, (right_x - s.get_width(), y))
+
+    def divider(y: int) -> None:
+        pygame.draw.line(screen, C_DIV, (PX + 5, y + 3), (PX + PANEL_W - 5, y + 3))
+
+    y = PY + PAD
+
+    # --- Sim info ---
+    rounds_str = f"{config.rounds_passed // 1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
+    fps_str    = f"{config.current_fps:.0f}" if config.current_fps > 0 else "--"
+    zoom_str   = f"{config.zoom_level:.1f}\u00d7"
+
+    blit_l("Round", C_LBL, LX, y);  blit_r(rounds_str, C_VAL, V2R, y);  y += LINE_H
+    blit_l("FPS",   C_LBL, LX, y);  blit_r(fps_str,   C_VAL, V2R, y);   y += LINE_H
+    blit_l("Zoom",  C_LBL, LX, y);  blit_r(zoom_str,  C_DIM, V2R, y);   y += LINE_H
+
+    # --- Divider ---
+    divider(y); y += DIV_H
+
+    # --- Population ---
+    blit_r("Count", C_DIM, V1R, y);  blit_r("Born", C_DIM, V2R, y);  y += LINE_H
+    blit_l("Prey", C_LBL, LX, y)
+    blit_r(str(len(preys)),   C_VAL, V1R, y)
+    blit_r(f"+{config.prey_born}", C_VAL, V2R, y);  y += LINE_H
+    blit_l("Pred", C_LBL, LX, y)
+    blit_r(str(len(predators)),     C_VAL, V1R, y)
+    blit_r(f"+{config.predator_born}", C_VAL, V2R, y);  y += LINE_H
+
+    # --- Divider ---
+    divider(y); y += DIV_H
+
+    # --- Deaths table ---
+    blit_l("Deaths", C_DIM, LX, y);  blit_r("Prey", C_DIM, V1R, y);  blit_r("Pred", C_DIM, V2R, y);  y += LINE_H
+    for label, pv, dv in [
+        ("Starve", config.prey_dead_by_starvation, str(config.predator_dead_by_starvation)),
+        ("Age",    config.prey_dead_by_age,         str(config.predator_dead_by_age)),
+        ("Hunted", config.prey_dead_by_hunting,     "\u2014"),
+    ]:
+        blit_l(label,   C_LBL, LX,  y)
+        blit_r(str(pv), C_VAL, V1R, y)
+        blit_r(dv,      C_VAL, V2R, y)
+        y += LINE_H
+
+
 #################################################
 # Main Drawing Function for Simulation
 #################################################
@@ -236,59 +322,7 @@ def draw_simulation(
         p.draw(screen)
     for p in predators: # Draw the predators
         p.draw(screen)
-    # Render statistics text in the top-left corner
-    font = get_stats_font()
-    # Format rounds in thousands (K)
-    rounds_display = f"{config.rounds_passed//1000}K" if config.rounds_passed >= 1000 else str(config.rounds_passed)
-    # Format FPS display
-    fps_display = f"{config.current_fps:.0f}" if config.current_fps > 0 else "--"
-    # Format zoom display
-    zoom_display = f"{config.zoom_level:.1f}x"
-    stats_descr = [
-        f"Rounds:",
-        f"FPS:",
-        f"Zoom:",
-        "",  # Blank line for separation
-        f"Prey:",
-        f"Predators:",
-        "",  # Blank line
-        f"Prey Deaths:",
-        f"    By Starvation:",
-        f"    By Old Age:",
-        f"    Hunted Down:",
-        "",  # Blank line
-        f"Predator Deaths:",
-        f"    By Starvation:",
-        f"    By Old Age:",
-    ]
-    stats = [
-        f"{rounds_display}",
-        f"{fps_display}",
-        f"{zoom_display}",
-        "",  # Blank line for separation
-        f"{len(preys)} (Born: {config.prey_born})",
-        f"{len(predators)} (Born: {config.predator_born})",
-        "",  # Blank line
-        f"{config.prey_deceased}",
-        f"{config.prey_dead_by_starvation}",
-        f"{config.prey_dead_by_age}",
-        f"{config.prey_dead_by_hunting}",
-        "",  # Blank line
-        f"{config.predator_deceased}",
-        f"{config.predator_dead_by_starvation}",
-        f"{config.predator_dead_by_age}",
-    ]
-    y_offset = config.STATS_Y_OFFSET
-    # Draw the statistics text
-    for line in stats_descr:
-        text_surface = font.render(line, True, config.FONT_COLORS)
-        screen.blit(text_surface, (config.STATS_X_OFFSET, y_offset))
-        y_offset += config.STATS_LINE_HEIGHT
-    y_offset = config.STATS_Y_OFFSET
-    for line in stats:
-        text_surface = font.render(line, True, config.FONT_COLORS)
-        screen.blit(text_surface, (config.STATS_X_OFFSET + 160, y_offset))
-        y_offset += config.STATS_LINE_HEIGHT
+    _draw_stats_panel(screen, predators, preys)
 
     # Buttons on the right side of the screen
     button_x = config.XLIM - config.BUTTON_X_OFFSET
