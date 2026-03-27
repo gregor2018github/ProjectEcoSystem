@@ -721,7 +721,7 @@ class StatisticsWindow:
             min_header = self.font.render("Min", True, (150, 200, 150))
             max_header = self.font.render("Max", True, (200, 150, 150))
             avg_header = self.font.render("Avg", True, (150, 150, 200))
-            base_header = self.font.render("Base", True, (200, 200, 150))
+            base_header = self.font.render("Start", True, (200, 200, 150))
             diff_header = self.font.render("Diff %", True, (200, 150, 200))
             
             col_min_x = trait_start_x + 120
@@ -756,11 +756,12 @@ class StatisticsWindow:
                 ("High Age HP", "high_age_health", config.PREDATOR_HIGH_AGE_HEALTH),
                 ("Mate Dist", "mating_search_distance", config.PREDATOR_MATING_SEARCH_DISTANCE),
             ]
-            
-            for display_name, attr_name, base_value in predator_traits:
+
+            for display_name, attr_name, config_default in predator_traits:
                 min_v, max_v, avg_v = get_trait_stats(self.pred_arrays, attr_name)
-                
-                # Calculate percentage difference from base (using average)
+                base_value = config.start_pred_traits.get(attr_name, config_default)
+
+                # Calculate percentage difference from start value (using average)
                 if base_value != 0:
                     diff_pct = ((avg_v - base_value) / base_value) * 100
                 else:
@@ -802,11 +803,12 @@ class StatisticsWindow:
                 ("Max Age", "max_age", config.PREY_MAX_AGE),
                 ("High Age HP", "high_age_health", config.PREY_HIGH_AGE_HEALTH),
             ]
-            
-            for display_name, attr_name, base_value in prey_traits:
+
+            for display_name, attr_name, config_default in prey_traits:
                 min_v, max_v, avg_v = get_trait_stats(self.prey_arrays, attr_name)
-                
-                # Calculate percentage difference from base (using average)
+                base_value = config.start_prey_traits.get(attr_name, config_default)
+
+                # Calculate percentage difference from start value (using average)
                 if base_value != 0:
                     diff_pct = ((avg_v - base_value) / base_value) * 100
                 else:

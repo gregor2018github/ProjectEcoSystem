@@ -141,6 +141,23 @@ class PredatorArrays:
         self.count += 1
         return i
 
+    def add_avg_traits(self, ax: float, ay: float, traits: dict, gen: int = 0) -> int:
+        """Add a predator using averaged trait values instead of config defaults."""
+        i = self.add_default(ax, ay, gen)
+        self.speed[i] = traits.get('speed', self.speed[i])
+        self.smell_distance[i] = traits.get('smell_distance', self.smell_distance[i])
+        self.predator_avoid_distance[i] = traits.get('predator_avoid_distance', self.predator_avoid_distance[i])
+        self.max_food[i] = traits.get('max_food', self.max_food[i])
+        self.food_gain_per_kill[i] = traits.get('food_gain_per_kill', self.food_gain_per_kill[i])
+        self.regular_energy_cost[i] = traits.get('regular_energy_cost', self.regular_energy_cost[i])
+        self.hunting_energy_cost[i] = traits.get('hunting_energy_cost', self.hunting_energy_cost[i])
+        self.starv_border[i] = traits.get('starv_border', self.starv_border[i])
+        self.max_age[i] = traits.get('max_age', self.max_age[i])
+        self.high_age_health[i] = traits.get('high_age_health', self.high_age_health[i])
+        self.mating_search_distance[i] = traits.get('mating_search_distance', self.mating_search_distance[i])
+        self.food[i] = self.max_food[i]
+        return i
+
     def compact(self) -> np.ndarray:
         """Remove dead entries by compacting arrays. Returns old-to-new index map."""
         n = self.count
@@ -285,6 +302,21 @@ class PreyArrays:
         self.food[i] = config.PREY_MAX_FOOD
 
         self.count += 1
+        return i
+
+    def add_avg_traits(self, ax: float, ay: float, traits: dict, gen: int = 0) -> int:
+        """Add a prey using averaged trait values instead of config defaults."""
+        i = self.add_default(ax, ay, gen)
+        self.speed[i] = traits.get('speed', self.speed[i])
+        self.fear_distance[i] = traits.get('fear_distance', self.fear_distance[i])
+        self.mating_search_distance[i] = traits.get('mating_search_distance', self.mating_search_distance[i])
+        self.max_food[i] = traits.get('max_food', self.max_food[i])
+        self.food_gain_per_grass[i] = traits.get('food_gain_per_grass', self.food_gain_per_grass[i])
+        self.starv_border[i] = traits.get('starv_border', self.starv_border[i])
+        self.flee_energy_cost[i] = traits.get('flee_energy_cost', self.flee_energy_cost[i])
+        self.max_age[i] = traits.get('max_age', self.max_age[i])
+        self.high_age_health[i] = traits.get('high_age_health', self.high_age_health[i])
+        self.food[i] = self.max_food[i]
         return i
 
     def compact(self) -> np.ndarray:

@@ -113,6 +113,38 @@ STATS_FPS_UNLIMITED = 0 # 0 means unlimited in pygame clock.tick()
 current_fps = 0.0  # Displayed FPS value
 FPS_UPDATE_INTERVAL = 2.0  # Seconds between FPS updates
 
+# Cached average traits for manual spawning (preserved when a population dies out)
+last_pred_trait_avgs: dict = {}
+last_prey_trait_avgs: dict = {}
+
+# Snapshot of trait values at simulation start (never changes mid-run)
+start_pred_traits: dict = {}
+start_prey_traits: dict = {}
+
+# Maps settings-window display names to SoA trait attribute names
+SETTINGS_TO_PRED_TRAIT: dict = {
+    "Predator Speed": "speed",
+    "Predator Avoidance Distance": "predator_avoid_distance",
+    "Predator Smell Distance": "smell_distance",
+    "Predator Health": "max_food",
+    "Predator Food Gain per Kill": "food_gain_per_kill",
+    "Predator Regular Energy Cost": "regular_energy_cost",
+    "Predator Hunting Energy Cost": "hunting_energy_cost",
+    "Predator Starvation Border": "starv_border",
+    "Predator Max Age": "max_age",
+    "Predator High Age Health": "high_age_health",
+}
+SETTINGS_TO_PREY_TRAIT: dict = {
+    "Prey Speed": "speed",
+    "Prey Fear Distance": "fear_distance",
+    "Prey Food Gain per Grass": "food_gain_per_grass",
+    "Prey Health": "max_food",
+    "Prey Starvation Border": "starv_border",
+    "Prey Flee Energy Cost": "flee_energy_cost",
+    "Prey Max Age": "max_age",
+    "Prey High Age Health": "high_age_health",
+}
+
 ################################################
 # Global statistics counters
 ################################################

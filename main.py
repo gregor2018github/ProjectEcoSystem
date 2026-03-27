@@ -66,6 +66,9 @@ def main() -> None:
     config.NUM_PREYS = start_config["NUM_PREYS"]
     config.NUM_PREDATORS = start_config["NUM_PREDATORS"]
 
+    # Sync default_settings so "Reset to std" in the settings menu uses the start-screen values
+    config.default_settings["FPS"] = config.FPS
+
     initialize_sounds()
 
     # set the size of the game field, either by locked values or by display size

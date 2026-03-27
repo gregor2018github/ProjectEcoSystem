@@ -69,44 +69,61 @@ class SettingsWindow:
         reset_x = self.modal_rect.left + (self.modal_rect.width - reset_width) // 2
         self.btn_rect_reset = pygame.Rect(reset_x, self.modal_rect.bottom - 110, reset_width, 30)
         
+        # For trait fields, show current population averages as the editable value (rounded)
+        def _avg(avg_dict, attr, fallback):
+            val = avg_dict.get(attr, fallback) if avg_dict else fallback
+            return round(float(val), 2) if isinstance(val, float) else val
+
         # Organize settings with section separators for better readability
         self.settings = OrderedDict([
             # Predator Settings
-            ("Predator Speed", config.PREDATOR_SPEED),
-            ("Predator Avoidance Distance", config.PREDATOR_PREDATOR_AVOID_DISTANCE),
-            ("Predator Smell Distance", config.PREDATOR_SMELL_DISTANCE),
+            ("Predator Speed", _avg(config.last_pred_trait_avgs, 'speed', config.PREDATOR_SPEED)),
+            ("Predator Avoidance Distance", _avg(config.last_pred_trait_avgs, 'predator_avoid_distance', config.PREDATOR_PREDATOR_AVOID_DISTANCE)),
+            ("Predator Smell Distance", _avg(config.last_pred_trait_avgs, 'smell_distance', config.PREDATOR_SMELL_DISTANCE)),
             ("Predator Reproduction Rate", config.PREDATOR_REPRODUCTION_RATE),
-            ("Predator Health", config.PREDATOR_MAX_FOOD),
-            ("Predator Food Gain per Kill", config.PREDATOR_FOOD_GAIN_PER_KILL),
-            ("Predator Regular Energy Cost", config.PREDATOR_REGULAR_ENERGY_COST),
-            ("Predator Hunting Energy Cost", config.PREDATOR_HUNTING_ENERGY_COST),
-            ("Predator Starvation Border", config.PREDATOR_STARV_BORDER),
-            ("Predator Max Age", config.PREDATOR_MAX_AGE),
-            ("Predator High Age Health", config.PREDATOR_HIGH_AGE_HEALTH),
+            ("Predator Health", _avg(config.last_pred_trait_avgs, 'max_food', config.PREDATOR_MAX_FOOD)),
+            ("Predator Food Gain per Kill", _avg(config.last_pred_trait_avgs, 'food_gain_per_kill', config.PREDATOR_FOOD_GAIN_PER_KILL)),
+            ("Predator Regular Energy Cost", _avg(config.last_pred_trait_avgs, 'regular_energy_cost', config.PREDATOR_REGULAR_ENERGY_COST)),
+            ("Predator Hunting Energy Cost", _avg(config.last_pred_trait_avgs, 'hunting_energy_cost', config.PREDATOR_HUNTING_ENERGY_COST)),
+            ("Predator Starvation Border", _avg(config.last_pred_trait_avgs, 'starv_border', config.PREDATOR_STARV_BORDER)),
+            ("Predator Max Age", _avg(config.last_pred_trait_avgs, 'max_age', config.PREDATOR_MAX_AGE)),
+            ("Predator High Age Health", _avg(config.last_pred_trait_avgs, 'high_age_health', config.PREDATOR_HIGH_AGE_HEALTH)),
             ("", ""),  # Section separator
-            
+
             # Prey Settings
-            ("Prey Speed", config.PREY_SPEED),
-            ("Prey Fear Distance", config.PREY_FEAR_DISTANCE),
+            ("Prey Speed", _avg(config.last_prey_trait_avgs, 'speed', config.PREY_SPEED)),
+            ("Prey Fear Distance", _avg(config.last_prey_trait_avgs, 'fear_distance', config.PREY_FEAR_DISTANCE)),
             ("Prey Reproduction Rate", config.PREY_REPRODUCTION_RATE),
-            ("Prey Food Gain per Grass", config.PREY_FOOD_GAIN_PER_GRASS),
-            ("Prey Health", config.PREY_MAX_FOOD),
-            ("Prey Starvation Border", config.PREY_STARV_BORDER),
+            ("Prey Food Gain per Grass", _avg(config.last_prey_trait_avgs, 'food_gain_per_grass', config.PREY_FOOD_GAIN_PER_GRASS)),
+            ("Prey Health", _avg(config.last_prey_trait_avgs, 'max_food', config.PREY_MAX_FOOD)),
+            ("Prey Starvation Border", _avg(config.last_prey_trait_avgs, 'starv_border', config.PREY_STARV_BORDER)),
             ("Prey Regular Energy Cost", config.PREY_REGULAR_ENERGY_COST),
-            ("Prey Flee Energy Cost", config.PREY_FLEE_ENERGY_COST),
-            ("Prey Max Age", config.PREY_MAX_AGE),
-            ("Prey High Age Health", config.PREY_HIGH_AGE_HEALTH),
+            ("Prey Flee Energy Cost", _avg(config.last_prey_trait_avgs, 'flee_energy_cost', config.PREY_FLEE_ENERGY_COST)),
+            ("Prey Max Age", _avg(config.last_prey_trait_avgs, 'max_age', config.PREY_MAX_AGE)),
+            ("Prey High Age Health", _avg(config.last_prey_trait_avgs, 'high_age_health', config.PREY_HIGH_AGE_HEALTH)),
             ("", ""),  # Section separator
-            
+
             # Environment Settings
             ("Grass Growth Rate", config.GRASS_GROWTH_RATE),
             ("Grass max per Field", config.GRASS_MAX_AMOUNT),
             ("Grass Start Value", config.DEFAULT_GRASS_AMOUNT),
             ("", ""),  # Section separator
-            
+
             # System Settings
             ("FPS", config.FPS)
         ])
+
+        # Reference values shown in the label: start snapshot for trait fields, std for others
+        self.reference_values = {}
+        for key in self.settings:
+            if key in config.SETTINGS_TO_PRED_TRAIT:
+                attr = config.SETTINGS_TO_PRED_TRAIT[key]
+                self.reference_values[key] = config.start_pred_traits.get(attr, config.default_settings.get(key, ''))
+            elif key in config.SETTINGS_TO_PREY_TRAIT:
+                attr = config.SETTINGS_TO_PREY_TRAIT[key]
+                self.reference_values[key] = config.start_prey_traits.get(attr, config.default_settings.get(key, ''))
+            else:
+                self.reference_values[key] = config.default_settings.get(key, '')
         
         self.error_fields = {}
         self.scroll_offset = 0
@@ -222,9 +239,9 @@ class SettingsWindow:
                         # Move cursor to end
                         self.cursor_position = len(self.active_text)
                     elif event.key == pygame.K_ESCAPE:
-                        # Cancel editing and restore original value
+                        # Cancel editing and restore reference value (start stats for traits, std for others)
                         if self.active_key is not None:
-                            original_val = config.default_settings.get(self.active_key, self.settings[self.active_key])
+                            original_val = self.reference_values.get(self.active_key, config.default_settings.get(self.active_key, self.settings[self.active_key]))
                             self.settings[self.active_key] = original_val
                             self.active_key = None
                             self.active_text = ""
@@ -339,14 +356,16 @@ class SettingsWindow:
                             pygame.draw.rect(self.screen, (255, 0, 0), rect)
                         else:
                             pygame.draw.rect(self.screen, (180, 180, 250), rect)
-                    label = f"{key} (std: {config.default_settings[key]}): {text_val}"
+                    ref_val = self.reference_values.get(key, config.default_settings.get(key, ''))
+                    ref_lbl = "start" if (key in config.SETTINGS_TO_PRED_TRAIT or key in config.SETTINGS_TO_PREY_TRAIT) else "std"
+                    label = f"{key} ({ref_lbl}: {ref_val}): {text_val}"
                     text_surface = param_font.render(label, True, (0,0,0))
                     # Center text vertically within the rect
                     text_y = rect.top + (rect.height - text_surface.get_height()) // 2
                     self.screen.blit(text_surface, (rect.left + 10, text_y))
                     if key == self.active_key and (self.cursor_timer // 500) % 2:  # Blink every 500ms
                         # Calculate cursor position within the text
-                        label_prefix = f"{key} (std: {config.default_settings[key]}): "
+                        label_prefix = f"{key} ({ref_lbl}: {ref_val}): "
                         text_before_cursor = label_prefix + text_val[:self.cursor_position]
                         caret_x = rect.left + 10 + param_font.size(text_before_cursor)[0]
                         caret_y = text_y

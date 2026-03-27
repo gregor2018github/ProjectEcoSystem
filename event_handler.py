@@ -158,6 +158,15 @@ def process_event(
             elif action == "resume":
                 play_click_sound()
                 stopped = False
+                # If a population is extinct, let the user's settings edit become the new spawn baseline
+                if pred_arrays.count == 0 and config.last_pred_trait_avgs:
+                    for skey, attr in config.SETTINGS_TO_PRED_TRAIT.items():
+                        if skey in new_settings:
+                            config.last_pred_trait_avgs[attr] = float(new_settings[skey])
+                if prey_arrays.count == 0 and config.last_prey_trait_avgs:
+                    for skey, attr in config.SETTINGS_TO_PREY_TRAIT.items():
+                        if skey in new_settings:
+                            config.last_prey_trait_avgs[attr] = float(new_settings[skey])
             elif action == "cancel":
                 play_click_sound()
                 stopped = False
@@ -166,7 +175,17 @@ def process_event(
             play_click_sound()
             spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM / config.zoom_level)
             spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM / config.zoom_level)
-            pred_arrays.add_default(spawn_x, spawn_y)
+            if pred_arrays.count > 0:
+                n = pred_arrays.count
+                config.last_pred_trait_avgs = {t: float(getattr(pred_arrays, t)[:n].mean()) for t in (
+                    'speed', 'smell_distance', 'predator_avoid_distance', 'max_food',
+                    'food_gain_per_kill', 'regular_energy_cost', 'hunting_energy_cost',
+                    'starv_border', 'max_age', 'high_age_health', 'mating_search_distance'
+                )}
+            if config.last_pred_trait_avgs:
+                pred_arrays.add_avg_traits(spawn_x, spawn_y, config.last_pred_trait_avgs)
+            else:
+                pred_arrays.add_default(spawn_x, spawn_y)
             event_handled_by_button = True
         elif rem_pred_button_rect.collidepoint(mouse_pos):
             register_button_click(rem_pred_button_rect)
@@ -178,7 +197,17 @@ def process_event(
             play_click_sound()
             spawn_x = random.uniform(config.camera_x, config.camera_x + config.XLIM / config.zoom_level)
             spawn_y = random.uniform(config.camera_y, config.camera_y + config.YLIM / config.zoom_level)
-            prey_arrays.add_default(spawn_x, spawn_y)
+            if prey_arrays.count > 0:
+                n = prey_arrays.count
+                config.last_prey_trait_avgs = {t: float(getattr(prey_arrays, t)[:n].mean()) for t in (
+                    'speed', 'fear_distance', 'mating_search_distance', 'max_food',
+                    'food_gain_per_grass', 'starv_border', 'flee_energy_cost',
+                    'max_age', 'high_age_health'
+                )}
+            if config.last_prey_trait_avgs:
+                prey_arrays.add_avg_traits(spawn_x, spawn_y, config.last_prey_trait_avgs)
+            else:
+                prey_arrays.add_default(spawn_x, spawn_y)
             event_handled_by_button = True
         elif rem_prey_button_rect.collidepoint(mouse_pos):
             register_button_click(rem_prey_button_rect)

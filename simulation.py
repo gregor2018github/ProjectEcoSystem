@@ -46,6 +46,17 @@ def setup_simulation() -> tuple[PredatorArrays, PreyArrays, GrassArray]:
 
     config.total_grass = grass.get_total()
 
+    # Snapshot start traits and seed the spawn-avg cache from initial config values
+    _pred_keys = ['speed', 'smell_distance', 'predator_avoid_distance', 'max_food',
+                  'food_gain_per_kill', 'regular_energy_cost', 'hunting_energy_cost',
+                  'starv_border', 'max_age', 'high_age_health', 'mating_search_distance']
+    _prey_keys = ['speed', 'fear_distance', 'mating_search_distance', 'max_food',
+                  'food_gain_per_grass', 'starv_border', 'flee_energy_cost', 'max_age', 'high_age_health']
+    config.start_pred_traits = {k: round(float(getattr(pred, k)[0]), 2) for k in _pred_keys} if pred.count > 0 else {}
+    config.start_prey_traits = {k: round(float(getattr(prey, k)[0]), 2) for k in _prey_keys} if prey.count > 0 else {}
+    config.last_pred_trait_avgs = dict(config.start_pred_traits)
+    config.last_prey_trait_avgs = dict(config.start_prey_traits)
+
     return pred, prey, grass
 
 
