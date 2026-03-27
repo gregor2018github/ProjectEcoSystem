@@ -80,36 +80,42 @@ def draw_button(
         mouse_pos: Current mouse position for hover detection.
     """
     hover = rect.collidepoint(mouse_pos)
-    # Check if this button is currently being clicked to apply visual effect
-    button_effect = False
     current_time = pygame.time.get_ticks()
-    
-    if config.BUTTON_CLICK_VISUAL_EFFECT and button_clicked == rect and \
-       current_time - button_click_time < config.BUTTON_CLICK_DURATION:
-        # Visual click effect: darker background, shifted position
-        pygame.draw.rect(surface, (40, 80, 60), pygame.Rect(
-            rect.left + 2, rect.top + 2, rect.width - 2, rect.height - 2
-        ), border_radius=8)
-        button_effect = True
-    else:
-        # Normal button appearance
-        if hover:
-            pygame.draw.rect(surface, (80, 120, 100), rect, border_radius=8) # Lighter green for hover
-        else:
-            pygame.draw.rect(surface, (60, 100, 80), rect, border_radius=8)
-    
-    # Always draw the border
-    if hover or button_effect:
-        pygame.draw.rect(surface, (255, 255, 255), rect, 3, border_radius=8) # Thicker border on hover/click
-    else:
-        pygame.draw.rect(surface, (255, 255, 255), rect, 2, border_radius=8)
-    
-    # Adjust text position slightly when button is pressed
-    text_surface = font.render(text, True, (255, 255, 255))
+    button_effect = (
+        config.BUTTON_CLICK_VISUAL_EFFECT
+        and button_clicked == rect
+        and current_time - button_click_time < config.BUTTON_CLICK_DURATION
+    )
+
     if button_effect:
-        text_rect = text_surface.get_rect(center=(rect.centerx + 1, rect.centery + 1))
+        bg_color  = (10, 28, 10)
+        bdr_color = (55, 95, 55)
+        draw_rect = pygame.Rect(rect.left + 1, rect.top + 1, rect.width - 1, rect.height - 1)
+    elif hover:
+        bg_color  = (36, 76, 36)
+        bdr_color = (90, 145, 90)
+        draw_rect = rect
     else:
-        text_rect = text_surface.get_rect(center=rect.center)
+        bg_color  = (22, 52, 22)
+        bdr_color = (55, 95, 55)
+        draw_rect = rect
+
+    pygame.draw.rect(surface, bg_color, draw_rect, border_radius=7)
+
+    # Subtle 1-px top-edge highlight for depth (skip when pressed)
+    if not button_effect:
+        hl_color = (60, 110, 60) if not hover else (80, 140, 80)
+        pygame.draw.line(
+            surface, hl_color,
+            (draw_rect.left + 7, draw_rect.top + 1),
+            (draw_rect.right - 8, draw_rect.top + 1),
+        )
+
+    pygame.draw.rect(surface, bdr_color, draw_rect, 2, border_radius=7)
+
+    text_surface = font.render(text, True, (215, 240, 215))
+    offset = 1 if button_effect else 0
+    text_rect = text_surface.get_rect(center=(rect.centerx + offset, rect.centery + offset))
     surface.blit(text_surface, text_rect)
 
 def register_button_click(rect: pygame.Rect) -> None:
@@ -181,29 +187,35 @@ def draw_minimap(screen: pygame.Surface) -> None:
     
     # Create a surface with alpha channel for the minimap
     minimap_surface = pygame.Surface((minimap_width, minimap_height), pygame.SRCALPHA)
-    
-    # Draw minimap background (same color as button background: 60, 100, 80)
+
     alpha_value = int(255 * _minimap_alpha)
-    pygame.draw.rect(minimap_surface, (60, 100, 80, alpha_value), 
+
+    # Dark green background matching the HUD panel
+    pygame.draw.rect(minimap_surface, (6, 18, 6, alpha_value),
                      pygame.Rect(0, 0, minimap_width, minimap_height))
-    
-    # Draw black border around minimap (world boundary)
-    pygame.draw.rect(minimap_surface, (0, 0, 0, alpha_value), 
+
+    # Border matching HUD border color
+    pygame.draw.rect(minimap_surface, (50, 90, 50, alpha_value),
                      pygame.Rect(0, 0, minimap_width, minimap_height), MINIMAP_BORDER_WIDTH)
-    
+
     # Calculate viewport rectangle on minimap
     scale_x = minimap_width / config.WORLD_WIDTH
     scale_y = minimap_height / config.WORLD_HEIGHT
-    
+
     viewport_x = int(config.camera_x * scale_x)
     viewport_y = int(config.camera_y * scale_y)
     viewport_w = int((config.XLIM / config.zoom_level) * scale_x)
     viewport_h = int((config.YLIM / config.zoom_level) * scale_y)
-    
-    # Draw white rectangle showing current viewport
+
+    # Semi-transparent fill inside viewport rect
+    vp_fill = pygame.Surface((viewport_w, viewport_h), pygame.SRCALPHA)
+    vp_fill.fill((150, 200, 150, int(40 * _minimap_alpha)))
+    minimap_surface.blit(vp_fill, (viewport_x, viewport_y))
+
+    # Bright green border for the viewport indicator
     viewport_rect = pygame.Rect(viewport_x, viewport_y, viewport_w, viewport_h)
-    pygame.draw.rect(minimap_surface, (255, 255, 255, alpha_value), viewport_rect, MINIMAP_BORDER_WIDTH)
-    
+    pygame.draw.rect(minimap_surface, (155, 210, 155, alpha_value), viewport_rect, MINIMAP_BORDER_WIDTH)
+
     # Blit the minimap surface to the screen
     screen.blit(minimap_surface, (minimap_x, minimap_y))
 
